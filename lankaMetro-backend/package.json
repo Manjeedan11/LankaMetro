@@ -1,0 +1,23 @@
+{
+  "name": "lankaMetro-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Backend setup for a Bus Routing & Scheduling based project\"",
+  "main": "src/app.js",
+  "scripts": {
+    "dev": "nodemon src/app.js",
+    "build": "npm install",
+    "start": "src/app.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.16.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "node-fetch": "^3.3.2",
+    "nodemon": "^3.1.14"
+  }
+}
