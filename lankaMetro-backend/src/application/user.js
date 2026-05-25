@@ -1,3 +1,4 @@
+import bcrypt from "bcryptjs";
 import userRepository from "../infrastructure/repository/User.js";
 import depotRepository from "../infrastructure/repository/Depot.js";
 import driverRepository from "../infrastructure/repository/Driver.js";
@@ -11,6 +12,7 @@ const ALLOWED_ROLES = [
   "maintenance_officer",
   "driver",
 ];
+const SALT_ROUNDS = 10;
 
 export const getUsers = async (req, res, next) => {
   try {
@@ -39,16 +41,16 @@ export const createUser = async (req, res, next) => {
     const {
       full_name,
       email,
-      password_hash,
+      password, // <-- changed from password_hash to password (plain text)
       role,
       phone_number,
       depot_id,
       status = "ACTIVE",
     } = req.body;
 
-    if (!full_name || !email || !password_hash || !role) {
+    if (!full_name || !email || !password || !role) {
       throw new ValidationError(
-        "Missing required fields: full_name, email, password_hash, role"
+        "Missing required fields: full_name, email, password, role"
       );
     }
 
@@ -77,10 +79,13 @@ export const createUser = async (req, res, next) => {
       throw new ValidationError("Email already exists");
     }
 
+    // Hash the plain password
+    const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+
     const userId = await userRepository.create({
       full_name,
       email,
-      password_hash,
+      password_hash: hashedPassword, // store the hash
       role,
       phone_number,
       depot_id: role === "admin" ? null : depot_id,
@@ -113,6 +118,12 @@ export const updateUser = async (req, res, next) => {
     const existingUser = await userRepository.findById(id);
     if (!existingUser) {
       throw new NotFoundError("User not found");
+    }
+
+    // If updating password, hash the new password
+    if (updates.password) {
+      updates.password_hash = await bcrypt.hash(updates.password, SALT_ROUNDS);
+      delete updates.password; // remove the plain password field
     }
 
     if (updates.role && !ALLOWED_ROLES.includes(updates.role)) {
