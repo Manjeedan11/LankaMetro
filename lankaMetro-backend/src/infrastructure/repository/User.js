@@ -24,7 +24,7 @@ export async function findById(id) {
 export async function findByEmail(email) {
   const result = await pool.query(
     `
-        SELECT user_id, full_name, email, role, password_hash, status, depot_id
+        SELECT user_id, full_name, email, password_hash, role, phone_number, status, depot_id
         FROM "user"
         WHERE email = $1
     `,
