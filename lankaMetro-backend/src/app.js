@@ -1,10 +1,12 @@
 import express from "express";
 import "dotenv/config";
 import pool, { testConnection, closeDatabase } from "./infrastructure/db.js";
+import globalErrorHandlingMiddleware from "./api/middleware/global-error-handling.js";
 
 const app = express();
 app.use(express.json());
 
+app.use(globalErrorHandlingMiddleware);
 (async () => {
   const connected = await testConnection();
   if (!connected) {
