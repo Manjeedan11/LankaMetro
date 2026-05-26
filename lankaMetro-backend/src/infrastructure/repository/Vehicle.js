@@ -1,7 +1,14 @@
 import pool from "../db.js";
 
-export async function findAll() {
-  const result = await pool.query("SELECT * FROM vehicle ORDER BY vehicle_id");
+export async function findAll(depotId = null) {
+  let query = "SELECT * FROM vehicle";
+  const params = [];
+  if (depotId) {
+    query += " WHERE depot_id = $1";
+    params.push(depotId);
+  }
+  query += " ORDER BY vehicle_id";
+  const result = await pool.query(query, params);
   return result.rows;
 }
 
@@ -51,6 +58,7 @@ export async function update(id, updates) {
 }
 
 export async function deleteById(id) {
+  // Soft delete – set status = 'RETIRED'
   const result = await pool.query(
     `UPDATE vehicle SET status = $1 WHERE vehicle_id = $2`,
     ["RETIRED", id]
