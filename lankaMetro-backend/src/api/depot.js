@@ -11,7 +11,6 @@ import { allowRoles } from "./middleware/role.js";
 
 export const depotRouter = express.Router();
 
-// All depot routes require authentication and admin role
 depotRouter.use(authenticate, allowRoles("admin"));
 
 depotRouter.route("/").get(getDepots).post(createDepot);

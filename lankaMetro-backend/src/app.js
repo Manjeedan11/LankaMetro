@@ -4,6 +4,7 @@ import pool, { testConnection, closeDatabase } from "./infrastructure/db.js";
 import globalErrorHandlingMiddleware from "./api/middleware/global-error-handling.js";
 import { userRouter } from "./api/user.js";
 import { depotRouter } from "./api/depot.js";
+import { routeRouter } from "./api/route.js";
 import { authenticate } from "./api/middleware/auth.js";
 import { authRouter } from "./api/auth.js";
 
@@ -12,6 +13,7 @@ app.use(express.json());
 
 app.use("/api/users", authenticate, userRouter);
 app.use("/api/depots", depotRouter);
+app.use("/api/routes", routeRouter);
 app.use("/api/auth", authRouter);
 
 app.use(globalErrorHandlingMiddleware);

@@ -82,7 +82,6 @@ export const deleteDepot = async (req, res, next) => {
       throw new NotFoundError("Depot not found");
     }
 
-    // Soft disable instead of hard delete
     const success = await depotRepository.disable(id);
     if (!success) {
       throw new NotFoundError("Depot not found");

@@ -41,7 +41,7 @@ export const createUser = async (req, res, next) => {
     const {
       full_name,
       email,
-      password, // <-- changed from password_hash to password (plain text)
+      password,
       role,
       phone_number,
       depot_id,
@@ -79,13 +79,12 @@ export const createUser = async (req, res, next) => {
       throw new ValidationError("Email already exists");
     }
 
-    // Hash the plain password
     const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
 
     const userId = await userRepository.create({
       full_name,
       email,
-      password_hash: hashedPassword, // store the hash
+      password_hash: hashedPassword,
       role,
       phone_number,
       depot_id: role === "admin" ? null : depot_id,
@@ -120,10 +119,9 @@ export const updateUser = async (req, res, next) => {
       throw new NotFoundError("User not found");
     }
 
-    // If updating password, hash the new password
     if (updates.password) {
       updates.password_hash = await bcrypt.hash(updates.password, SALT_ROUNDS);
-      delete updates.password; // remove the plain password field
+      delete updates.password;
     }
 
     if (updates.role && !ALLOWED_ROLES.includes(updates.role)) {
