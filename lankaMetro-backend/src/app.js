@@ -8,6 +8,7 @@ import { routeRouter } from "./api/route.js";
 import { stopRouter } from "./api/stop.js";
 import { routeStopRouter } from "./api/routeStop.js";
 import { vehicleRouter } from "./api/vehicle.js";
+import maintenanceRouter from "./api/maintenance.js";
 import { authenticate } from "./api/middleware/auth.js";
 import { authRouter } from "./api/auth.js";
 
@@ -20,6 +21,7 @@ app.use("/api/route", routeRouter);
 app.use("/api/stops", stopRouter);
 app.use("/api/routes", routeStopRouter);
 app.use("/api/vehicles", vehicleRouter);
+app.use("/api/maintenance", maintenanceRouter);
 app.use("/api/auth", authRouter);
 
 app.use(globalErrorHandlingMiddleware);

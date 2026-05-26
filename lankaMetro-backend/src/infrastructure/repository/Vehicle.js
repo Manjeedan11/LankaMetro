@@ -84,6 +84,14 @@ export async function findAvailableVehicles(date, startTime, endTime, depotId) {
   return result.rows;
 }
 
+export async function updateStatus(vehicleId, newStatus) {
+  const result = await pool.query(
+    "UPDATE vehicle SET status = $1 WHERE vehicle_id = $2",
+    [newStatus, vehicleId]
+  );
+  return result.rowCount > 0;
+}
+
 export default {
   findAll,
   findById,
@@ -91,4 +99,5 @@ export default {
   update,
   deleteById,
   findAvailableVehicles,
+  updateStatus,
 };
