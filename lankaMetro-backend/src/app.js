@@ -15,9 +15,11 @@ import { driverRouter } from "./api/driver.js";
 import { scheduleRouter } from "./api/schedule.js";
 import { notificationRouter } from "./api/notification.js";
 import { reportRouter } from "./api/reportRouter.js";
+import cors from "cors";
 
 const app = express();
 app.use(express.json());
+app.use(cors({ origin: "http://localhost:5173" }));
 
 app.use("/api/users", authenticate, userRouter);
 app.use("/api/depots", depotRouter);
