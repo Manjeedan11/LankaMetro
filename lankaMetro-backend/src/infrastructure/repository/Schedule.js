@@ -97,6 +97,7 @@ export async function cancel(id, depotId) {
   return result.rowCount > 0;
 }
 
+// Replace checkDriverOverlap with:
 export async function checkDriverOverlap(
   driverId,
   date,
@@ -105,11 +106,12 @@ export async function checkDriverOverlap(
   excludeScheduleId = null
 ) {
   let query = `
-        SELECT schedule_id FROM schedule
-        WHERE driver_id = $1
-          AND schedule_date = $2
-          AND (departure_time, arrival_time) OVERLAPS ($3, $4)
-    `;
+      SELECT schedule_id FROM schedule
+      WHERE driver_id = $1
+        AND schedule_date = $2
+        AND departure_time < $4
+        AND arrival_time > $3
+  `;
   const params = [driverId, date, startTime, endTime];
   if (excludeScheduleId) {
     query += ` AND schedule_id != $5`;
@@ -119,6 +121,7 @@ export async function checkDriverOverlap(
   return result.rowCount > 0;
 }
 
+// Similarly for checkVehicleOverlap:
 export async function checkVehicleOverlap(
   vehicleId,
   date,
@@ -127,11 +130,12 @@ export async function checkVehicleOverlap(
   excludeScheduleId = null
 ) {
   let query = `
-        SELECT schedule_id FROM schedule
-        WHERE vehicle_id = $1
-          AND schedule_date = $2
-          AND (departure_time, arrival_time) OVERLAPS ($3, $4)
-    `;
+      SELECT schedule_id FROM schedule
+      WHERE vehicle_id = $1
+        AND schedule_date = $2
+        AND departure_time < $4
+        AND arrival_time > $3
+  `;
   const params = [vehicleId, date, startTime, endTime];
   if (excludeScheduleId) {
     query += ` AND schedule_id != $5`;
