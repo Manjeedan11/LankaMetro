@@ -13,6 +13,7 @@ import { authenticate } from "./api/middleware/auth.js";
 import { authRouter } from "./api/auth.js";
 import { driverRouter } from "./api/driver.js";
 import { scheduleRouter } from "./api/schedule.js";
+import { notificationRouter } from "./api/notification.js";
 
 const app = express();
 app.use(express.json());
@@ -26,6 +27,7 @@ app.use("/api/vehicles", vehicleRouter);
 app.use("/api/maintenance", maintenanceRouter);
 app.use("/api/drivers", driverRouter);
 app.use("/api/schedules", scheduleRouter);
+app.use("/api/notifications", notificationRouter);
 app.use("/api/auth", authRouter);
 
 app.use(globalErrorHandlingMiddleware);

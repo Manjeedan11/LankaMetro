@@ -5,6 +5,7 @@ import vehicleRepository from "../infrastructure/repository/Vehicle.js";
 import driverRepository from "../infrastructure/repository/Driver.js";
 import ValidationError from "../domain/errors/validation-error.js";
 import NotFoundError from "../domain/errors/not-found-error.js";
+import { notifyDriver } from "./notificationService.js";
 
 export const getSchedules = async (req, res, next) => {
   try {
@@ -23,7 +24,6 @@ export const getScheduleById = async (req, res, next) => {
     const depotId = req.user.depotId;
     const schedule = await scheduleRepository.findById(id, depotId);
     if (!schedule) throw new NotFoundError("Schedule not found");
-    // Fetch return trip if any
     const returnTrip = await returnTripRepository.findByOriginalScheduleId(id);
     res.status(200).json({ ...schedule, returnTrip });
   } catch (err) {
@@ -120,8 +120,6 @@ export const createSchedule = async (req, res, next) => {
           "Return departure and arrival times required"
         );
       }
-      // Optional: validate return times do not overlap with forward or other schedules
-      // (can reuse same overlap functions with same driver/vehicle)
       const returnDriverOverlap = await scheduleRepository.checkDriverOverlap(
         driver_id,
         schedule_date,
@@ -143,15 +141,21 @@ export const createSchedule = async (req, res, next) => {
           "Return trip would overlap with vehicle's existing schedule"
         );
 
-      // Use the same route (or maybe a reverse route; we'll use the same route_id for simplicity)
       returnTripId = await returnTripRepository.create({
         original_schedule_id: scheduleId,
         departure_time: return_departure_time,
         arrival_time: return_arrival_time,
         status: "SCHEDULED",
-        return_route_id: route_id, // same route, but in reverse (could be different)
+        return_route_id: route_id,
       });
     }
+
+    // 7. Notify the driver (newly added)
+    await notifyDriver(
+      driver_id,
+      `🚍 New trip assigned: ${route.route_name} on ${schedule_date} at ${departure_time}`,
+      "DRIVER_ASSIGNMENT"
+    );
 
     res.status(201).json({
       message: "Schedule created",
@@ -172,7 +176,6 @@ export const updateSchedule = async (req, res, next) => {
     const existing = await scheduleRepository.findById(id, depotId);
     if (!existing) throw new NotFoundError("Schedule not found");
 
-    // If changing date/time/driver/vehicle, revalidate overlaps (excluding this schedule)
     if (
       updates.driver_id ||
       updates.vehicle_id ||
@@ -208,8 +211,6 @@ export const updateSchedule = async (req, res, next) => {
 
     const success = await scheduleRepository.update(id, depotId, updates);
     if (!success) throw new NotFoundError("Schedule not found or no changes");
-
-    // If return trip exists and needs update (optional), handle separately
     res.status(200).json({ message: "Schedule updated" });
   } catch (err) {
     next(err);
