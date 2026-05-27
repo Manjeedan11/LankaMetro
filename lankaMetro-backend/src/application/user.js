@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import userRepository from "../infrastructure/repository/User.js";
 import depotRepository from "../infrastructure/repository/Depot.js";
 import driverRepository from "../infrastructure/repository/Driver.js";
+import { sendCredentials } from "../infrastructure/email.js";
 import ValidationError from "../domain/errors/validation-error.js";
 import NotFoundError from "../domain/errors/not-found-error.js";
 
@@ -100,6 +101,10 @@ export const createUser = async (req, res, next) => {
         depot_id: depot_id,
       });
     }
+
+    sendCredentials(email, full_name, password, role).catch((err) =>
+      console.error("Email error:", err)
+    );
 
     res
       .status(201)
