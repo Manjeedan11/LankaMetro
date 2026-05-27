@@ -29,28 +29,24 @@ export const updateDriver = async (req, res, next) => {
     const id = parseInt(req.params.id);
     const depotId = req.user.depotId;
     const updates = req.body;
+    const isAdmin = req.user.role === "admin";
 
-    const existing = await driverRepository.findById(id, depotId);
+    const existing = await driverRepository.findById(id, depotId, isAdmin);
     if (!existing) throw new NotFoundError("Driver not found");
 
-    const isAdmin = req.user.role === "admin";
     const isSelf = existing.user_id === req.user.userId;
 
     if (!isAdmin && !isSelf) {
-      return res
-        .status(403)
-        .json({
-          message: "Forbidden: You can only update your own driver record",
-        });
+      return res.status(403).json({
+        message: "Forbidden: You can only update your own driver record",
+      });
     }
 
-    // Only admin can change license fields (as per your decision)
     if (!isAdmin) {
       delete updates.license_number;
       delete updates.license_expiry;
     }
 
-    // Validate license expiry if present (admin only)
     if (updates.license_expiry) {
       const expiryDate = new Date(updates.license_expiry);
       if (isNaN(expiryDate) || expiryDate <= new Date()) {
@@ -58,7 +54,12 @@ export const updateDriver = async (req, res, next) => {
       }
     }
 
-    const success = await driverRepository.update(id, depotId, updates);
+    const success = await driverRepository.update(
+      id,
+      depotId,
+      updates,
+      isAdmin
+    );
     if (!success) throw new NotFoundError("Driver not found or no changes");
     res.status(200).json({ message: "Driver updated successfully" });
   } catch (error) {
