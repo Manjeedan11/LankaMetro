@@ -189,14 +189,35 @@ code {
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
   }
+}
 
-  /* * {
-    @apply border-border outline-ring/50;
+/* Custom component styles */
+@layer components {
+  .btn-primary {
+    @apply px-4 py-2 bg-primary text-white rounded-md font-medium hover:bg-red-700 transition-colors;
   }
-  body {
-    @apply bg-background text-foreground;
+
+  .btn-secondary {
+    @apply px-4 py-2 bg-white border border-gray-200 rounded-md font-medium hover:bg-gray-50 transition-colors;
   }
-  html {
-    @apply font-sans;
-  } */
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-sm;
+  }
+
+  .card {
+    @apply bg-white rounded-lg border border-gray-100 p-6 shadow-sm;
+  }
+
+  .page-header {
+    @apply mb-8;
+  }
+
+  .page-title {
+    @apply text-3xl font-bold text-gray-900 mb-2;
+  }
+
+  .page-description {
+    @apply text-gray-600 text-sm;
+  }
 }
