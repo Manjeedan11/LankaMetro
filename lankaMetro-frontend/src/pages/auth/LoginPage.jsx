@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useNavigate } from "react-router";
-import { Mail, Lock, BusFront } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, BusFront } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,6 +21,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [loginMutation, { isLoading }] = useLoginMutation();
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -31,7 +32,6 @@ export default function LoginPage() {
       const response = await loginMutation({ email, password }).unwrap();
       const { token, user } = response;
       dispatch(setCredentials({ user, token }));
-
       console.log("User role from API:", user.role);
       const routePrefix = roleToPath[user.role] || "admin";
       console.log("Mapped route prefix:", routePrefix);
@@ -41,20 +41,25 @@ export default function LoginPage() {
       alert("Invalid email or password");
     }
   };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-white to-red-50 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center bg-white relative overflow-hidden">
+      {/* subtle red-toned decorative elements */}
       <div className="absolute top-10 left-10 opacity-5">
-        <BusFront size={120} className="text-primary" />
+        <BusFront size={120} className="text-[#B71C1C]" />
       </div>
       <div className="absolute bottom-20 right-10 opacity-5">
-        <BusFront size={140} className="text-primary transform -scale-x-100" />
+        <BusFront
+          size={140}
+          className="text-[#B71C1C] transform -scale-x-100"
+        />
       </div>
-      <div className="absolute top-1/3 right-1/4 opacity-3 w-96 h-96 bg-primary rounded-full blur-3xl" />
+      <div className="absolute top-1/3 right-1/4 opacity-10 w-96 h-96 bg-[#B71C1C] rounded-full blur-3xl" />
 
       <div className="w-full max-w-md px-4 relative z-10 pb-20">
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <div className="bg-primary p-3 rounded-lg">
+            <div className="bg-[#B71C1C] p-3 rounded-lg shadow-md">
               <BusFront size={32} className="text-white" />
             </div>
           </div>
@@ -64,19 +69,16 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <Card className="border border-gray-200 rounded-3xl shadow-lg">
+        <Card className="border-2 border-white rounded-3xl shadow-xl bg-[#B71C1C]">
           <CardHeader className="p-6 pb-2">
-            <CardTitle className="text-xl font-semibold text-center">
+            <CardTitle className="text-xl font-semibold text-center text-white">
               Login to your account
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6 pt-0">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-700"
-                >
+                <label className="block text-sm font-medium text-white">
                   Email Address
                 </label>
                 <div className="relative">
@@ -85,10 +87,9 @@ export default function LoginPage() {
                     className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                   />
                   <Input
-                    id="email"
                     type="email"
                     placeholder="Enter your email"
-                    className="pl-10"
+                    className="pl-10 bg-white text-gray-900 placeholder:text-gray-500"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
@@ -97,10 +98,7 @@ export default function LoginPage() {
               </div>
 
               <div className="space-y-2">
-                <label
-                  htmlFor="password"
-                  className="block text-sm font-medium text-gray-700"
-                >
+                <label className="block text-sm font-medium text-white">
                   Password
                 </label>
                 <div className="relative">
@@ -109,26 +107,31 @@ export default function LoginPage() {
                     className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
                   />
                   <Input
-                    id="password"
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
-                    className="pl-10"
+                    className="pl-10 pr-10 bg-white text-gray-900 placeholder:text-gray-500"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                   />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
                 </div>
               </div>
+
               <div className="flex items-center">
                 <Checkbox
                   id="remember"
                   checked={rememberMe}
                   onCheckedChange={(checked) => setRememberMe(checked)}
+                  className="border-white data-[state=checked]:bg-white data-[state=checked]:text-[#B71C1C]"
                 />
-                <label
-                  htmlFor="remember"
-                  className="ml-2 text-sm text-gray-600"
-                >
+                <label htmlFor="remember" className="ml-2 text-sm text-white">
                   Remember me
                 </label>
               </div>
@@ -136,7 +139,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-primary border border-gray-200 hover:bg-red-700 hover:text-white text-black font-medium py-2 rounded-lg transition-colors"
+                className="w-full bg-white hover:bg-[#B71C1C] text-[#B71C1C] hover:text-white border-none font-medium py-2 rounded-lg transition-colors"
               >
                 {isLoading ? "Logging in..." : "Login"}
               </Button>
