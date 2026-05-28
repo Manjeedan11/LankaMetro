@@ -11,9 +11,10 @@ import DepotSupervisorDashboard from "./pages/depot/DepotSupervisorDashboard";
 import Fleet from "./pages/depot/Fleet";
 import Drivers from "./pages/depot/Drivers";
 import MaintenanceDashboard from "./pages/maintenance/MaintenanceDashboard";
+import MaintenanceHistory from "./pages/maintenance/MaintenanceHistory";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <MaintenanceDashboard />
+    <MaintenanceHistory />
   </StrictMode>
 );

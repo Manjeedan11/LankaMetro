@@ -42,6 +42,7 @@ export default function MaintenanceDashboard() {
   const [formData, setFormData] = useState({
     vehicle: "",
     type: "",
+    serviceDate: "",
     description: "",
     status: "PENDING",
   });
@@ -148,6 +149,37 @@ export default function MaintenanceDashboard() {
                 </Select>
               </div>
             </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Service Date
+                </label>
+                <Input
+                  type="date"
+                  name="serviceDate"
+                  value={formData.serviceDate}
+                  onChange={handleInputChange}
+                  required
+                  className="text-black"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Status</label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value) => handleSelectChange("status", value)}
+                >
+                  <SelectTrigger className="w-full text-black">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="PENDING">PENDING</SelectItem>
+                    <SelectItem value="IN_PROGRESS">IN_PROGRESS</SelectItem>
+                    <SelectItem value="COMPLETED">COMPLETED</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div>
               <label className="block text-sm font-medium mb-2">
                 Description
@@ -160,22 +192,6 @@ export default function MaintenanceDashboard() {
                 placeholder="Maintenance details..."
                 className="text-black"
               />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Status</label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) => handleSelectChange("status", value)}
-              >
-                <SelectTrigger className="w-full text-black">
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="PENDING">PENDING</SelectItem>
-                  <SelectItem value="IN_PROGRESS">IN_PROGRESS</SelectItem>
-                  <SelectItem value="COMPLETED">COMPLETED</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
             <Button type="submit" className={`bg-primary ${buttonBase}`}>
               Add Record
