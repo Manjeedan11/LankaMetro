@@ -7,9 +7,10 @@ import LogisticsDashboard from "./pages/logistics/LogisticsDashboard";
 import RouteManagement from "./pages/logistics/RouteManagement";
 import ScheduleManagement from "./pages/logistics/ScheduleManagement";
 import Reports from "./pages/logistics/Reports";
+import DepotSupervisorDashboard from "./pages/depot/DepotSupervisorDashboard";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <Reports />
+    <DepotSupervisorDashboard />
   </StrictMode>
 );
