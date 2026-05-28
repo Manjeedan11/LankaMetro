@@ -10,9 +10,10 @@ import Reports from "./pages/logistics/Reports";
 import DepotSupervisorDashboard from "./pages/depot/DepotSupervisorDashboard";
 import Fleet from "./pages/depot/Fleet";
 import Drivers from "./pages/depot/Drivers";
+import MaintenanceDashboard from "./pages/maintenance/MaintenanceDashboard";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <Drivers />
+    <MaintenanceDashboard />
   </StrictMode>
 );
