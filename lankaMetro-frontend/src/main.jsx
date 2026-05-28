@@ -5,9 +5,10 @@ import UserManagement from "./pages/admin/UserManagement";
 import VehicleManagement from "./pages/admin/VehicleManagement";
 import LogisticsDashboard from "./pages/logistics/LogisticsDashboard";
 import RouteManagement from "./pages/logistics/RouteManagement";
+import ScheduleManagement from "./pages/logistics/ScheduleManagement";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <RouteManagement />
+    <ScheduleManagement />
   </StrictMode>
 );
