@@ -8,9 +8,10 @@ import RouteManagement from "./pages/logistics/RouteManagement";
 import ScheduleManagement from "./pages/logistics/ScheduleManagement";
 import Reports from "./pages/logistics/Reports";
 import DepotSupervisorDashboard from "./pages/depot/DepotSupervisorDashboard";
+import Fleet from "./pages/depot/Fleet";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <DepotSupervisorDashboard />
+    <Fleet />
   </StrictMode>
 );
