@@ -12,9 +12,10 @@ import Fleet from "./pages/depot/Fleet";
 import Drivers from "./pages/depot/Drivers";
 import MaintenanceDashboard from "./pages/maintenance/MaintenanceDashboard";
 import MaintenanceHistory from "./pages/maintenance/MaintenanceHistory";
+import DriverTrips from "./pages/driver/DriverTrips";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <MaintenanceHistory />
+    <DriverTrips />
   </StrictMode>
 );
