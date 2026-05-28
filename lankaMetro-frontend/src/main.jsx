@@ -1,6 +1,12 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { Provider } from "react-redux";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router";
+import { store } from "./lib/store";
 import "./index.css";
+import LoginPage from "./pages/auth/LoginPage";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import DepotManagement from "./pages/admin/DepotManagement";
 import UserManagement from "./pages/admin/UserManagement";
 import VehicleManagement from "./pages/admin/VehicleManagement";
 import LogisticsDashboard from "./pages/logistics/LogisticsDashboard";
@@ -14,9 +20,55 @@ import MaintenanceDashboard from "./pages/maintenance/MaintenanceDashboard";
 import MaintenanceHistory from "./pages/maintenance/MaintenanceHistory";
 import DriverTrips from "./pages/driver/DriverTrips";
 import DriverHistory from "./pages/driver/DriverHistory";
+import MainLayout from "./layouts/MainLayout";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <DriverHistory />
+    <Provider store={store}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/auth" element={<LoginPage />} />
+          <Route path="/" element={<Navigate to="/auth" replace />} />
+
+          <Route element={<MainLayout />}>
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/depots" element={<DepotManagement />} />
+            <Route path="/admin/users" element={<UserManagement />} />
+            <Route path="/admin/vehicles" element={<VehicleManagement />} />
+
+            <Route
+              path="/logistics/dashboard"
+              element={<LogisticsDashboard />}
+            />
+            <Route path="/logistics/routes" element={<RouteManagement />} />
+            <Route
+              path="/logistics/schedules"
+              element={<ScheduleManagement />}
+            />
+            <Route path="/logistics/reports" element={<Reports />} />
+
+            <Route
+              path="/supervisor/dashboard"
+              element={<DepotSupervisorDashboard />}
+            />
+            <Route path="/supervisor/vehicles" element={<Fleet />} />
+            <Route path="/supervisor/drivers" element={<Drivers />} />
+
+            <Route
+              path="/maintenance/dashboard"
+              element={<MaintenanceDashboard />}
+            />
+            <Route
+              path="/maintenance/history"
+              element={<MaintenanceHistory />}
+            />
+
+            <Route path="/driver/dashboard" element={<DriverTrips />} />
+            <Route path="/driver/trips" element={<DriverTrips />} />
+            <Route path="/driver/history" element={<DriverHistory />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </Provider>
   </StrictMode>
 );

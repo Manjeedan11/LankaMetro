@@ -1,10 +1,46 @@
+import { useState } from "react";
+import { useDispatch } from "react-redux";
+import { useNavigate } from "react-router";
 import { Mail, Lock, BusFront } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { useLoginMutation } from "@/lib/api";
+import { setCredentials } from "@/lib/features/authSlice";
+
+const roleToPath = {
+  admin: "admin",
+  logistics_officer: "logistics",
+  depot_supervisor: "supervisor",
+  maintenance_officer: "maintenance",
+  driver: "driver",
+};
 
 export default function LoginPage() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
+  const [loginMutation, { isLoading }] = useLoginMutation();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await loginMutation({ email, password }).unwrap();
+      const { token, user } = response;
+      dispatch(setCredentials({ user, token }));
+
+      console.log("User role from API:", user.role);
+      const routePrefix = roleToPath[user.role] || "admin";
+      console.log("Mapped route prefix:", routePrefix);
+      navigate(`/${routePrefix}/dashboard`);
+    } catch (err) {
+      console.error("Login failed:", err);
+      alert("Invalid email or password");
+    }
+  };
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-red-50 via-white to-red-50 relative overflow-hidden">
       <div className="absolute top-10 left-10 opacity-5">
@@ -35,7 +71,7 @@ export default function LoginPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="p-6 pt-0">
-            <form className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
                 <label
                   htmlFor="email"
@@ -53,6 +89,9 @@ export default function LoginPage() {
                     type="email"
                     placeholder="Enter your email"
                     className="pl-10"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
                   />
                 </div>
               </div>
@@ -74,11 +113,18 @@ export default function LoginPage() {
                     type="password"
                     placeholder="Enter your password"
                     className="pl-10"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
                   />
                 </div>
               </div>
               <div className="flex items-center">
-                <Checkbox id="remember" />
+                <Checkbox
+                  id="remember"
+                  checked={rememberMe}
+                  onCheckedChange={(checked) => setRememberMe(checked)}
+                />
                 <label
                   htmlFor="remember"
                   className="ml-2 text-sm text-gray-600"
@@ -89,9 +135,10 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
+                disabled={isLoading}
                 className="w-full bg-primary border border-gray-200 hover:bg-red-700 hover:text-white text-black font-medium py-2 rounded-lg transition-colors"
               >
-                Login
+                {isLoading ? "Logging in..." : "Login"}
               </Button>
             </form>
           </CardContent>
