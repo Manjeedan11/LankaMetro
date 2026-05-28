@@ -9,9 +9,10 @@ import ScheduleManagement from "./pages/logistics/ScheduleManagement";
 import Reports from "./pages/logistics/Reports";
 import DepotSupervisorDashboard from "./pages/depot/DepotSupervisorDashboard";
 import Fleet from "./pages/depot/Fleet";
+import Drivers from "./pages/depot/Drivers";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <Fleet />
+    <Drivers />
   </StrictMode>
 );
