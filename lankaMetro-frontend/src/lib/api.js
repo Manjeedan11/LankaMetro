@@ -140,16 +140,16 @@ export const Api = createApi({
 
     // ========== ROUTES ==========
     getRoutes: builder.query({
-      query: () => `routes`,
+      query: () => `route`,
       providesTags: ["Route"],
     }),
     getRouteById: builder.query({
-      query: (id) => `routes/${id}`,
+      query: (id) => `route/${id}`,
       providesTags: (result, error, id) => [{ type: "Route", id }],
     }),
     createRoute: builder.mutation({
       query: (routeData) => ({
-        url: `routes`,
+        url: `route`,
         method: "POST",
         body: routeData,
       }),
@@ -157,7 +157,7 @@ export const Api = createApi({
     }),
     updateRoute: builder.mutation({
       query: ({ id, ...data }) => ({
-        url: `routes/${id}`,
+        url: `route/${id}`,
         method: "PATCH",
         body: data,
       }),
@@ -165,7 +165,7 @@ export const Api = createApi({
     }),
     deleteRoute: builder.mutation({
       query: (id) => ({
-        url: `routes/${id}`,
+        url: `route/${id}`,
         method: "DELETE",
       }),
       invalidatesTags: ["Route"],

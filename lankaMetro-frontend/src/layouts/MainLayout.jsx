@@ -4,6 +4,7 @@ import { useState } from "react";
 import Sidebar from "../components/standalone/Sidebar";
 import Navbar from "../components/standalone/Navbar";
 import { logout } from "@/lib/features/authSlice";
+import "leaflet/dist/leaflet.css";
 
 export default function MainLayout() {
   const token = useSelector((state) => state.auth.token);

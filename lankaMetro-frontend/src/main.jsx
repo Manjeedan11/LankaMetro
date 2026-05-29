@@ -21,6 +21,7 @@ import MaintenanceHistory from "./pages/maintenance/MaintenanceHistory";
 import DriverTrips from "./pages/driver/DriverTrips";
 import DriverHistory from "./pages/driver/DriverHistory";
 import MainLayout from "./layouts/MainLayout";
+import StopManagement from "./pages/logistics/StopManagement";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -41,6 +42,7 @@ createRoot(document.getElementById("root")).render(
               element={<LogisticsDashboard />}
             />
             <Route path="/logistics/routes" element={<RouteManagement />} />
+            <Route path="/logistics/stops" element={<StopManagement />} />
             <Route
               path="/logistics/schedules"
               element={<ScheduleManagement />}

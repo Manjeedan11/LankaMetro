@@ -2,12 +2,12 @@ import pool from "../db.js";
 
 export async function findByRoute(routeId, depotId) {
   const result = await pool.query(
-    `SELECT rs.route_stop_id, rs.stop_order, s.stop_id, s.stop_name, s.location
-         FROM route_stop rs
-         JOIN stop s ON rs.stop_id = s.stop_id
-         JOIN route r ON rs.route_id = r.route_id
-         WHERE r.route_id = $1 AND r.depot_id = $2
-         ORDER BY rs.stop_order`,
+    `SELECT rs.route_stop_id, rs.stop_order, s.stop_id, s.stop_name, s.location, s.latitude, s.longitude
+     FROM route_stop rs
+     JOIN stop s ON rs.stop_id = s.stop_id
+     JOIN route r ON rs.route_id = r.route_id
+     WHERE r.route_id = $1 AND r.depot_id = $2
+     ORDER BY rs.stop_order`,
     [routeId, depotId]
   );
   return result.rows;
