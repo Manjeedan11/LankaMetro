@@ -26,12 +26,14 @@ export const getStopById = async (req, res, next) => {
 
 export const createStop = async (req, res, next) => {
   try {
-    const { stop_name, location } = req.body;
+    const { stop_name, location, latitude, longitude } = req.body;
     const depotId = req.user.depotId;
     if (!stop_name) throw new ValidationError("stop_name is required");
     const newId = await stopRepository.create({
       stop_name,
       location,
+      latitude: latitude ? parseFloat(latitude) : null,
+      longitude: longitude ? parseFloat(longitude) : null,
       depot_id: depotId,
     });
     res.status(201).json({ message: "Stop created", stop_id: newId });
@@ -45,6 +47,11 @@ export const updateStop = async (req, res, next) => {
     const id = parseInt(req.params.id);
     const depotId = req.user.depotId;
     const updates = req.body;
+
+    if (updates.latitude !== undefined)
+      updates.latitude = parseFloat(updates.latitude);
+    if (updates.longitude !== undefined)
+      updates.longitude = parseFloat(updates.longitude);
     const existing = await stopRepository.findById(id, depotId);
     if (!existing) throw new NotFoundError("Stop not found");
     const success = await stopRepository.update(id, depotId, updates);

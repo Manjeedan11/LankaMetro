@@ -2,7 +2,7 @@ import pool from "../db.js";
 
 export async function findAll(depotId) {
   const result = await pool.query(
-    "SELECT * FROM stop WHERE depot_id = $1 ORDER BY stop_name",
+    "SELECT stop_id, stop_name, location, latitude, longitude, depot_id FROM stop WHERE depot_id = $1 ORDER BY stop_name",
     [depotId]
   );
   return result.rows;
@@ -10,19 +10,19 @@ export async function findAll(depotId) {
 
 export async function findById(id, depotId) {
   const result = await pool.query(
-    "SELECT * FROM stop WHERE stop_id = $1 AND depot_id = $2",
+    "SELECT stop_id, stop_name, location, latitude, longitude, depot_id FROM stop WHERE stop_id = $1 AND depot_id = $2",
     [id, depotId]
   );
   return result.rows[0] || null;
 }
 
 export async function create(stopData) {
-  const { stop_name, location, depot_id } = stopData;
+  const { stop_name, location, latitude, longitude, depot_id } = stopData;
   const result = await pool.query(
-    `INSERT INTO stop (stop_name, location, depot_id)
-         VALUES ($1, $2, $3)
-         RETURNING stop_id`,
-    [stop_name, location, depot_id]
+    `INSERT INTO stop (stop_name, location, latitude, longitude, depot_id)
+     VALUES ($1, $2, $3, $4, $5)
+     RETURNING stop_id`,
+    [stop_name, location, latitude || null, longitude || null, depot_id]
   );
   return result.rows[0].stop_id;
 }
