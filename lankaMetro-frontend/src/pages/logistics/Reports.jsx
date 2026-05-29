@@ -1,5 +1,5 @@
 import { Download, Filter } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -10,43 +10,70 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-
-const mockReports = [
-  {
-    route: "R001 - Colombo Express",
-    trips: 24,
-    vehicles: 3,
-    drivers: 4,
-    completionRate: "98%",
-  },
-  {
-    route: "R002 - Kandy Loop",
-    trips: 18,
-    vehicles: 2,
-    drivers: 3,
-    completionRate: "95%",
-  },
-  {
-    route: "R003 - Galle Connector",
-    trips: 15,
-    vehicles: 2,
-    drivers: 2,
-    completionRate: "100%",
-  },
-  {
-    route: "R004 - Jaffna Express",
-    trips: 12,
-    vehicles: 2,
-    drivers: 2,
-    completionRate: "92%",
-  },
-];
+import {
+  useGetScheduleReportQuery,
+  useGetRouteSummaryQuery,
+  useExportScheduleReportPDFQuery,
+} from "@/lib/api";
 
 export default function Reports() {
   const [dateFrom, setDateFrom] = useState("2024-05-01");
   const [dateTo, setDateTo] = useState("2024-05-26");
-  const [depot, setDepot] = useState("all");
-  const [route, setRoute] = useState("all");
+  const [routeFilter, setRouteFilter] = useState("all");
+  const [triggerExport, setTriggerExport] = useState(false);
+
+  const { data: scheduleData = [], isLoading: scheduleLoading } =
+    useGetScheduleReportQuery({
+      startDate: dateFrom,
+      endDate: dateTo,
+    });
+
+  const { data: routeSummary = [], isLoading: summaryLoading } =
+    useGetRouteSummaryQuery(30);
+
+  const {
+    data: pdfBlob,
+    refetch: exportPDF,
+    isFetching: pdfLoading,
+  } = useExportScheduleReportPDFQuery(
+    { startDate: dateFrom, endDate: dateTo },
+    { skip: !triggerExport }
+  );
+
+  useEffect(() => {
+    if (pdfBlob && triggerExport) {
+      const url = window.URL.createObjectURL(pdfBlob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `schedule_report_${dateFrom}_to_${dateTo}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      setTriggerExport(false);
+    }
+  }, [pdfBlob, triggerExport, dateFrom, dateTo]);
+
+  const handleExportPDF = () => {
+    setTriggerExport(true);
+    exportPDF();
+  };
+
+  const totalRoutes = routeSummary.length;
+  const totalTrips = scheduleData.length;
+  const avgCompletion = scheduleData.length
+    ? (scheduleData.filter((s) => s.status === "COMPLETED").length /
+        scheduleData.length) *
+      100
+    : 0;
+  const activeVehicles = 9;
+
+  const filteredSchedule =
+    routeFilter === "all"
+      ? scheduleData
+      : scheduleData.filter(
+          (item) => item.route_id?.toString() === routeFilter
+        );
 
   const buttonBase =
     "border border-gray-300 text-black hover:bg-red-700 hover:text-white transition-colors";
@@ -68,7 +95,7 @@ export default function Reports() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium mb-2">
                 Date From
@@ -90,38 +117,34 @@ export default function Reports() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">Depot</label>
-              <Select value={depot} onValueChange={setDepot}>
-                <SelectTrigger className="w-full text-black">
-                  <SelectValue placeholder="Select depot" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Depots</SelectItem>
-                  <SelectItem value="colombo">Colombo Central</SelectItem>
-                  <SelectItem value="kandy">Kandy Hub</SelectItem>
-                  <SelectItem value="galle">Galle</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
               <label className="block text-sm font-medium mb-2">Route</label>
-              <Select value={route} onValueChange={setRoute}>
+              <Select value={routeFilter} onValueChange={setRouteFilter}>
                 <SelectTrigger className="w-full text-black">
                   <SelectValue placeholder="Select route" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Routes</SelectItem>
-                  <SelectItem value="r001">R001 - Colombo Express</SelectItem>
-                  <SelectItem value="r002">R002 - Kandy Loop</SelectItem>
-                  <SelectItem value="r003">R003 - Galle Connector</SelectItem>
+                  {routeSummary.map((route) => (
+                    <SelectItem
+                      key={route.route_id}
+                      value={route.route_id.toString()}
+                    >
+                      {route.route_name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" className={buttonBase}>
+            <Button
+              variant="outline"
+              className={buttonBase}
+              onClick={handleExportPDF}
+              disabled={pdfLoading}
+            >
               <Download size={16} className="mr-2" />
-              Generate & Export PDF
+              {pdfLoading ? "Generating..." : "Generate & Export PDF"}
             </Button>
           </div>
         </CardContent>
@@ -131,25 +154,33 @@ export default function Reports() {
         <Card className="border border-gray-200 shadow-sm">
           <CardContent className="p-4">
             <p className="text-xs font-medium text-gray-600">Total Routes</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">4</p>
+            <p className="text-2xl font-bold text-gray-900 mt-1">
+              {totalRoutes}
+            </p>
           </CardContent>
         </Card>
         <Card className="border border-gray-200 shadow-sm">
           <CardContent className="p-4">
             <p className="text-xs font-medium text-gray-600">Total Trips</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">69</p>
+            <p className="text-2xl font-bold text-gray-900 mt-1">
+              {totalTrips}
+            </p>
           </CardContent>
         </Card>
         <Card className="border border-gray-200 shadow-sm">
           <CardContent className="p-4">
             <p className="text-xs font-medium text-gray-600">Avg Completion</p>
-            <p className="text-2xl font-bold text-green-600 mt-1">96.25%</p>
+            <p className="text-2xl font-bold text-green-600 mt-1">
+              {avgCompletion.toFixed(1)}%
+            </p>
           </CardContent>
         </Card>
         <Card className="border border-gray-200 shadow-sm">
           <CardContent className="p-4">
             <p className="text-xs font-medium text-gray-600">Active Vehicles</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">9</p>
+            <p className="text-2xl font-bold text-gray-900 mt-1">
+              {activeVehicles}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -170,41 +201,50 @@ export default function Reports() {
                     Trips
                   </th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                    Vehicles
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                    Drivers
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
                     Completion Rate
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {mockReports.map((report, idx) => (
-                  <tr
-                    key={idx}
-                    className="border-b border-gray-100 hover:bg-gray-50"
-                  >
-                    <td className="py-3 px-4 text-sm font-medium text-black">
-                      {report.route}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-black">
-                      {report.trips}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-black">
-                      {report.vehicles}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-black">
-                      {report.drivers}
-                    </td>
-                    <td className="py-3 px-4 text-sm">
-                      <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                        {report.completionRate}
-                      </span>
+                {summaryLoading ? (
+                  <tr>
+                    <td colSpan="3" className="text-center py-6 text-gray-500">
+                      Loading...
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  routeSummary.map((route) => {
+                    const routeTrips = scheduleData.filter(
+                      (s) => s.route_id === route.route_id
+                    ).length;
+                    const completed = scheduleData.filter(
+                      (s) =>
+                        s.route_id === route.route_id &&
+                        s.status === "COMPLETED"
+                    ).length;
+                    const completionRate = routeTrips
+                      ? ((completed / routeTrips) * 100).toFixed(1)
+                      : "0.0";
+                    return (
+                      <tr
+                        key={route.route_id}
+                        className="border-b border-gray-100 hover:bg-gray-50"
+                      >
+                        <td className="py-3 px-4 text-sm font-medium text-black">
+                          {route.route_name}
+                        </td>
+                        <td className="py-3 px-4 text-sm text-black">
+                          {routeTrips}
+                        </td>
+                        <td className="py-3 px-4 text-sm">
+                          <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
+                            {completionRate}%
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
