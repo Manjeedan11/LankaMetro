@@ -1,50 +1,39 @@
+import { useGetVehiclesQuery, useGetSchedulesQuery } from "@/lib/api";
 import StatusBadge from "@/components/standalone/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const mockFleet = [
-  {
-    id: "V001",
-    vehicle: "WP-CD-1234",
-    capacity: 45,
-    status: "AVAILABLE",
-    route: "R001",
-    availability: "100%",
-  },
-  {
-    id: "V002",
-    vehicle: "WP-CD-1235",
-    capacity: 50,
-    status: "AVAILABLE",
-    route: "R002",
-    availability: "100%",
-  },
-  {
-    id: "V003",
-    vehicle: "WP-CD-1236",
-    capacity: 45,
-    status: "AVAILABLE",
-    route: "R003",
-    availability: "95%",
-  },
-  {
-    id: "V004",
-    vehicle: "WP-CD-1237",
-    capacity: 40,
-    status: "UNAVAILABLE",
-    route: "-",
-    availability: "0%",
-  },
-  {
-    id: "V005",
-    vehicle: "WP-CD-1238",
-    capacity: 48,
-    status: "AVAILABLE",
-    route: "R001",
-    availability: "100%",
-  },
-];
-
 export default function Fleet() {
+  const { data: vehicles = [], isLoading, isError } = useGetVehiclesQuery();
+  const today = new Date().toISOString().split("T")[0];
+  const { data: schedules = [] } = useGetSchedulesQuery(today);
+
+  const totalVehicles = vehicles.length;
+  const availableVehicles = vehicles.filter(
+    (v) => v.status === "ACTIVE"
+  ).length;
+  const avgCapacity = totalVehicles
+    ? (
+        vehicles.reduce((sum, v) => sum + v.capacity, 0) / totalVehicles
+      ).toFixed(0)
+    : 0;
+
+  const vehiclesWithSchedules = new Set(schedules.map((s) => s.vehicle_id))
+    .size;
+  const utilization = totalVehicles
+    ? ((vehiclesWithSchedules / totalVehicles) * 100).toFixed(0)
+    : 0;
+
+  if (isLoading)
+    return (
+      <div className="container mx-auto px-4 py-6">Loading fleet data...</div>
+    );
+  if (isError)
+    return (
+      <div className="container mx-auto px-4 py-6 text-red-600">
+        Error loading fleet data.
+      </div>
+    );
+
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
       <div className="page-header">
@@ -56,25 +45,35 @@ export default function Fleet() {
         <Card className="border border-gray-200 shadow-sm">
           <CardContent className="p-4">
             <p className="text-xs font-medium text-gray-600">Total Vehicles</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">5</p>
+            <p className="text-2xl font-bold text-gray-900 mt-1">
+              {totalVehicles}
+            </p>
           </CardContent>
         </Card>
         <Card className="border border-gray-200 shadow-sm">
           <CardContent className="p-4">
             <p className="text-xs font-medium text-gray-600">Available</p>
-            <p className="text-2xl font-bold text-green-600 mt-1">4</p>
+            <p className="text-2xl font-bold text-green-600 mt-1">
+              {availableVehicles}
+            </p>
           </CardContent>
         </Card>
         <Card className="border border-gray-200 shadow-sm">
           <CardContent className="p-4">
             <p className="text-xs font-medium text-gray-600">Avg Capacity</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">45</p>
+            <p className="text-2xl font-bold text-gray-900 mt-1">
+              {avgCapacity}
+            </p>
           </CardContent>
         </Card>
         <Card className="border border-gray-200 shadow-sm">
           <CardContent className="p-4">
-            <p className="text-xs font-medium text-gray-600">Utilization</p>
-            <p className="text-2xl font-bold text-blue-600 mt-1">80%</p>
+            <p className="text-xs font-medium text-gray-600">
+              Today's Utilization
+            </p>
+            <p className="text-2xl font-bold text-blue-600 mt-1">
+              {utilization}%
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -92,7 +91,7 @@ export default function Fleet() {
                     Vehicle ID
                   </th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                    Vehicle
+                    Plate Number
                   </th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
                     Capacity
@@ -104,46 +103,43 @@ export default function Fleet() {
                     Assigned Route
                   </th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                    Availability
+                    Today's Trips
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {mockFleet.map((vehicle) => (
-                  <tr
-                    key={vehicle.id}
-                    className="border-b border-gray-100 hover:bg-gray-50"
-                  >
-                    <td className="py-3 px-4 text-sm font-medium text-black">
-                      {vehicle.id}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-black">
-                      {vehicle.vehicle}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-black">
-                      {vehicle.capacity} seats
-                    </td>
-                    <td className="py-3 px-4 text-sm">
-                      <StatusBadge status={vehicle.status} />
-                    </td>
-                    <td className="py-3 px-4 text-sm text-black">
-                      {vehicle.route}
-                    </td>
-                    <td className="py-3 px-4 text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-green-500 h-2 rounded-full"
-                            style={{ width: vehicle.availability }}
-                          ></div>
-                        </div>
-                        <span className="text-xs font-semibold text-gray-700">
-                          {vehicle.availability}
-                        </span>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {vehicles.map((vehicle) => {
+                  const todaysTrips = schedules.filter(
+                    (s) => s.vehicle_id === vehicle.vehicle_id
+                  ).length;
+                  // Assigned route – we would need to get from schedule; optional
+                  const assignedRoute = "—";
+                  return (
+                    <tr
+                      key={vehicle.vehicle_id}
+                      className="border-b border-gray-100 hover:bg-gray-50"
+                    >
+                      <td className="py-3 px-4 text-sm font-medium text-black">
+                        {vehicle.vehicle_id}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-black">
+                        {vehicle.plate_number}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-black">
+                        {vehicle.capacity} seats
+                      </td>
+                      <td className="py-3 px-4 text-sm">
+                        <StatusBadge status={vehicle.status} />
+                      </td>
+                      <td className="py-3 px-4 text-sm text-black">
+                        {assignedRoute}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-black">
+                        {todaysTrips}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
