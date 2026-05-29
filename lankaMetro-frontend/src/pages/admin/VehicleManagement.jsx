@@ -9,51 +9,36 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const mockVehicles = [
-  {
-    id: "V001",
-    plate: "WP-CD-1234",
-    capacity: 45,
-    fuelType: "Diesel",
-    depot: "Colombo Central",
-    status: "ACTIVE",
-  },
-  {
-    id: "V002",
-    plate: "WP-CD-1235",
-    capacity: 50,
-    fuelType: "Diesel",
-    depot: "Kandy Hub",
-    status: "MAINTENANCE",
-  },
-  {
-    id: "V003",
-    plate: "WP-CD-1236",
-    capacity: 45,
-    fuelType: "CNG",
-    depot: "Galle",
-    status: "ACTIVE",
-  },
-  {
-    id: "V004",
-    plate: "WP-CD-1237",
-    capacity: 40,
-    fuelType: "Diesel",
-    depot: "Colombo Central",
-    status: "RETIRED",
-  },
-];
+import DeleteConfirmDialog from "@/components/standalone/DeleteConfirmDialog";
+import {
+  useGetVehiclesQuery,
+  useCreateVehicleMutation,
+  useUpdateVehicleMutation,
+  useDeleteVehicleMutation,
+  useGetDepotsQuery,
+} from "@/lib/api";
 
 export default function VehicleManagement() {
-  const [vehicles, setVehicles] = useState(mockVehicles);
+  const {
+    data: vehicles = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useGetVehiclesQuery();
+  const { data: depots = [], isLoading: depotsLoading } = useGetDepotsQuery();
+  const [createVehicle] = useCreateVehicleMutation();
+  const [updateVehicle] = useUpdateVehicleMutation();
+  const [deleteVehicle] = useDeleteVehicleMutation();
+
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [formData, setFormData] = useState({
-    plate: "",
+    plate_number: "",
     capacity: "",
-    fuelType: "",
-    depot: "",
+    fuel_type: "",
+    depot_id: "",
     status: "ACTIVE",
   });
 
@@ -62,52 +47,61 @@ export default function VehicleManagement() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleFuelTypeChange = (value) => {
-    setFormData((prev) => ({ ...prev, fuelType: value }));
-  };
-
-  const handleDepotChange = (value) => {
-    setFormData((prev) => ({ ...prev, depot: value }));
-  };
-
-  const handleStatusChange = (value) => {
-    setFormData((prev) => ({ ...prev, status: value }));
-  };
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editingId) {
-      setVehicles(
-        vehicles.map((v) => (v.id === editingId ? { ...v, ...formData } : v))
-      );
+    try {
+      if (editingId) {
+        await updateVehicle({ id: editingId, ...formData }).unwrap();
+      } else {
+        await createVehicle(formData).unwrap();
+      }
+      refetch();
+      setShowForm(false);
       setEditingId(null);
-    } else {
-      const newVehicle = {
-        id: `V${String(vehicles.length + 1).padStart(3, "0")}`,
-        ...formData,
-        capacity: parseInt(formData.capacity),
-      };
-      setVehicles([...vehicles, newVehicle]);
+      setFormData({
+        plate_number: "",
+        capacity: "",
+        fuel_type: "",
+        depot_id: "",
+        status: "ACTIVE",
+      });
+    } catch (err) {
+      console.error("Failed to save vehicle:", err);
+      alert("Error saving vehicle");
     }
-    setFormData({
-      plate: "",
-      capacity: "",
-      fuelType: "",
-      depot: "",
-      status: "ACTIVE",
-    });
-    setShowForm(false);
   };
 
   const handleEdit = (vehicle) => {
-    setFormData(vehicle);
-    setEditingId(vehicle.id);
+    setFormData({
+      plate_number: vehicle.plate_number,
+      capacity: vehicle.capacity.toString(),
+      fuel_type: vehicle.fuel_type,
+      depot_id: vehicle.depot_id.toString(),
+      status: vehicle.status,
+    });
+    setEditingId(vehicle.vehicle_id);
     setShowForm(true);
   };
 
-  const handleDelete = (id) => {
-    setVehicles(vehicles.filter((v) => v.id !== id));
+  const handleDeleteClick = (id) => {
+    setDeleteTargetId(id);
+    setDeleteDialogOpen(true);
   };
+
+  const confirmDelete = async () => {
+    try {
+      await deleteVehicle(deleteTargetId).unwrap();
+      refetch();
+    } catch (err) {
+      alert("Delete failed");
+    } finally {
+      setDeleteDialogOpen(false);
+      setDeleteTargetId(null);
+    }
+  };
+
+  if (isLoading) return <div>Loading vehicles...</div>;
+  if (isError) return <div>Error loading vehicles</div>;
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
@@ -120,10 +114,10 @@ export default function VehicleManagement() {
         onClick={() => {
           setEditingId(null);
           setFormData({
-            plate: "",
+            plate_number: "",
             capacity: "",
-            fuelType: "",
-            depot: "",
+            fuel_type: "",
+            depot_id: "",
             status: "ACTIVE",
           });
           setShowForm(!showForm);
@@ -135,25 +129,26 @@ export default function VehicleManagement() {
       </button>
 
       {showForm && (
-        <div className="card">
+        <div className="card overflow-visible">
           <h2 className="text-lg font-semibold mb-4 text-black">
             {editingId ? "Edit Vehicle" : "Add New Vehicle"}
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Plate Number */}
             <div>
               <label className="block text-sm font-medium mb-2">
                 Plate Number
               </label>
               <Input
                 type="text"
-                name="plate"
-                value={formData.plate}
+                name="plate_number"
+                value={formData.plate_number}
                 onChange={handleInputChange}
                 placeholder="e.g., WP-CD-1234"
                 required
-                className="text-black"
               />
             </div>
+            {/* Capacity */}
             <div>
               <label className="block text-sm font-medium mb-2">
                 Capacity (seats)
@@ -165,60 +160,119 @@ export default function VehicleManagement() {
                 onChange={handleInputChange}
                 placeholder="Enter capacity"
                 required
-                className="text-black"
               />
             </div>
+            {/* Fuel Type */}
             <div>
               <label className="block text-sm font-medium mb-2">
                 Fuel Type
               </label>
               <Select
-                onValueChange={handleFuelTypeChange}
-                value={formData.fuelType}
+                value={formData.fuel_type}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, fuel_type: value }))
+                }
               >
-                <SelectTrigger className="w-full text-black">
+                <SelectTrigger className="w-full bg-white">
                   <SelectValue placeholder="Select fuel type" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Diesel">Diesel</SelectItem>
-                  <SelectItem value="CNG">CNG</SelectItem>
-                  <SelectItem value="Electric">Electric</SelectItem>
-                  <SelectItem value="Petrol">Petrol</SelectItem>
+                <SelectContent
+                  position="popper"
+                  className="z-50 bg-white border border-gray-200 rounded-md shadow-lg"
+                >
+                  <SelectItem
+                    value="DIESEL"
+                    className="text-black hover:bg-gray-100"
+                  >
+                    Diesel
+                  </SelectItem>
+                  <SelectItem
+                    value="CNG"
+                    className="text-black hover:bg-gray-100"
+                  >
+                    CNG
+                  </SelectItem>
+                  <SelectItem
+                    value="ELECTRIC"
+                    className="text-black hover:bg-gray-100"
+                  >
+                    Electric
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            {/* Depot */}
             <div>
               <label className="block text-sm font-medium mb-2">Depot</label>
-              <Select onValueChange={handleDepotChange} value={formData.depot}>
-                <SelectTrigger className="w-full text-black">
+              <Select
+                value={formData.depot_id}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, depot_id: value }))
+                }
+              >
+                <SelectTrigger className="w-full bg-white">
                   <SelectValue placeholder="Select depot" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Colombo Central">
-                    Colombo Central
-                  </SelectItem>
-                  <SelectItem value="Kandy Hub">Kandy Hub</SelectItem>
-                  <SelectItem value="Galle">Galle</SelectItem>
-                  <SelectItem value="Jaffna">Jaffna</SelectItem>
+                <SelectContent
+                  position="popper"
+                  className="z-50 bg-white border border-gray-200 rounded-md shadow-lg"
+                >
+                  {depotsLoading ? (
+                    <SelectItem value="" disabled className="text-black">
+                      Loading...
+                    </SelectItem>
+                  ) : (
+                    depots.map((depot) => (
+                      <SelectItem
+                        key={depot.depot_id}
+                        value={depot.depot_id.toString()}
+                        className="text-black hover:bg-gray-100"
+                      >
+                        {depot.depot_name}
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>
+            {/* Status */}
             <div>
               <label className="block text-sm font-medium mb-2">Status</label>
               <Select
-                onValueChange={handleStatusChange}
                 value={formData.status}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, status: value }))
+                }
               >
-                <SelectTrigger className="w-full text-black">
+                <SelectTrigger className="w-full bg-white">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ACTIVE">ACTIVE</SelectItem>
-                  <SelectItem value="MAINTENANCE">MAINTENANCE</SelectItem>
-                  <SelectItem value="RETIRED">RETIRED</SelectItem>
+                <SelectContent
+                  position="popper"
+                  className="z-50 bg-white border border-gray-200 rounded-md shadow-lg"
+                >
+                  <SelectItem
+                    value="ACTIVE"
+                    className="text-black hover:bg-gray-100"
+                  >
+                    ACTIVE
+                  </SelectItem>
+                  <SelectItem
+                    value="MAINTENANCE"
+                    className="text-black hover:bg-gray-100"
+                  >
+                    MAINTENANCE
+                  </SelectItem>
+                  <SelectItem
+                    value="RETIRED"
+                    className="text-black hover:bg-gray-100"
+                  >
+                    RETIRED
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            {/* Buttons */}
             <div className="flex gap-2">
               <button
                 type="submit"
@@ -241,6 +295,7 @@ export default function VehicleManagement() {
         </div>
       )}
 
+      {/* Vehicles Table */}
       <div className="card">
         <h2 className="text-lg font-semibold mb-4 text-black">All Vehicles</h2>
         <div className="overflow-x-auto">
@@ -273,23 +328,24 @@ export default function VehicleManagement() {
             <tbody>
               {vehicles.map((vehicle) => (
                 <tr
-                  key={vehicle.id}
+                  key={vehicle.vehicle_id}
                   className="border-b border-gray-100 hover:bg-gray-50"
                 >
                   <td className="py-3 px-4 text-sm font-medium text-black">
-                    {vehicle.id}
+                    {vehicle.vehicle_id}
                   </td>
                   <td className="py-3 px-4 text-sm text-black">
-                    {vehicle.plate}
+                    {vehicle.plate_number}
                   </td>
                   <td className="py-3 px-4 text-sm text-black">
                     {vehicle.capacity} seats
                   </td>
                   <td className="py-3 px-4 text-sm text-black">
-                    {vehicle.fuelType}
+                    {vehicle.fuel_type}
                   </td>
                   <td className="py-3 px-4 text-sm text-black">
-                    {vehicle.depot}
+                    {depots.find((d) => d.depot_id === vehicle.depot_id)
+                      ?.depot_name || `Depot ${vehicle.depot_id}`}
                   </td>
                   <td className="py-3 px-4 text-sm">
                     <StatusBadge status={vehicle.status} />
@@ -303,7 +359,7 @@ export default function VehicleManagement() {
                         <Edit2 size={16} />
                       </button>
                       <button
-                        onClick={() => handleDelete(vehicle.id)}
+                        onClick={() => handleDeleteClick(vehicle.vehicle_id)}
                         className="p-1.5 hover:bg-gray-200 rounded text-red-600"
                       >
                         <Trash2 size={16} />
@@ -316,6 +372,14 @@ export default function VehicleManagement() {
           </table>
         </div>
       </div>
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        title="Delete Vehicle"
+        description="Are you sure you want to delete this vehicle? This action cannot be undone."
+      />
     </div>
   );
 }

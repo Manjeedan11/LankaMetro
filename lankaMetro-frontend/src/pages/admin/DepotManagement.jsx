@@ -9,46 +9,33 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const mockDepots = [
-  {
-    id: "D001",
-    name: "Colombo Central",
-    location: "Colombo",
-    contact: "+94112223333",
-    status: "ACTIVE",
-  },
-  {
-    id: "D002",
-    name: "Kandy Transport Hub",
-    location: "Kandy",
-    contact: "+94812334455",
-    status: "ACTIVE",
-  },
-  {
-    id: "D003",
-    name: "Galle Depot",
-    location: "Galle",
-    contact: "+94912445566",
-    status: "ACTIVE",
-  },
-  {
-    id: "D004",
-    name: "Jaffna Station",
-    location: "Jaffna",
-    contact: "+94212556677",
-    status: "INACTIVE",
-  },
-];
+import DeleteConfirmDialog from "@/components/standalone/DeleteConfirmDialog";
+import {
+  useGetDepotsQuery,
+  useCreateDepotMutation,
+  useUpdateDepotMutation,
+  useDeleteDepotMutation,
+} from "@/lib/api";
 
 export default function DepotManagement() {
-  const [depots, setDepots] = useState(mockDepots);
+  const {
+    data: depots = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useGetDepotsQuery();
+  const [createDepot] = useCreateDepotMutation();
+  const [updateDepot] = useUpdateDepotMutation();
+  const [deleteDepot] = useDeleteDepotMutation();
+
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [formData, setFormData] = useState({
-    name: "",
+    depot_name: "",
     location: "",
-    contact: "",
+    contact_number: "",
     status: "ACTIVE",
   });
 
@@ -57,33 +44,59 @@ export default function DepotManagement() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (editingId) {
-      setDepots(
-        depots.map((d) => (d.id === editingId ? { ...d, ...formData } : d))
-      );
+    try {
+      if (editingId) {
+        await updateDepot({ id: editingId, ...formData }).unwrap();
+      } else {
+        await createDepot(formData).unwrap();
+      }
+      refetch();
+      setShowForm(false);
       setEditingId(null);
-    } else {
-      const newDepot = {
-        id: `D${String(depots.length + 1).padStart(3, "0")}`,
-        ...formData,
-      };
-      setDepots([...depots, newDepot]);
+      setFormData({
+        depot_name: "",
+        location: "",
+        contact_number: "",
+        status: "ACTIVE",
+      });
+    } catch (err) {
+      console.error("Failed to save depot:", err);
+      alert("Error saving depot");
     }
-    setFormData({ name: "", location: "", contact: "", status: "ACTIVE" });
-    setShowForm(false);
   };
 
   const handleEdit = (depot) => {
-    setFormData(depot);
-    setEditingId(depot.id);
+    setFormData({
+      depot_name: depot.depot_name,
+      location: depot.location,
+      contact_number: depot.contact_number,
+      status: depot.status,
+    });
+    setEditingId(depot.depot_id);
     setShowForm(true);
   };
 
-  const handleDelete = (id) => {
-    setDepots(depots.filter((d) => d.id !== id));
+  const handleDeleteClick = (id) => {
+    setDeleteTargetId(id);
+    setDeleteDialogOpen(true);
   };
+
+  const confirmDelete = async () => {
+    try {
+      await deleteDepot(deleteTargetId).unwrap();
+      refetch();
+    } catch (err) {
+      alert("Delete failed");
+    } finally {
+      setDeleteDialogOpen(false);
+      setDeleteTargetId(null);
+    }
+  };
+
+  if (isLoading) return <div>Loading...</div>;
+  if (isError) return <div>Error loading depots</div>;
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
@@ -96,9 +109,9 @@ export default function DepotManagement() {
         onClick={() => {
           setEditingId(null);
           setFormData({
-            name: "",
+            depot_name: "",
             location: "",
-            contact: "",
+            contact_number: "",
             status: "ACTIVE",
           });
           setShowForm(!showForm);
@@ -110,7 +123,7 @@ export default function DepotManagement() {
       </button>
 
       {showForm && (
-        <div className="card">
+        <div className="card overflow-visible">
           <h2 className="text-lg text-black font-semibold mb-4">
             {editingId ? "Edit Depot" : "Add New Depot"}
           </h2>
@@ -121,8 +134,8 @@ export default function DepotManagement() {
               </label>
               <Input
                 type="text"
-                name="name"
-                value={formData.name}
+                name="depot_name"
+                value={formData.depot_name}
                 onChange={handleInputChange}
                 placeholder="Enter depot name"
                 required
@@ -145,8 +158,8 @@ export default function DepotManagement() {
               </label>
               <Input
                 type="tel"
-                name="contact"
-                value={formData.contact}
+                name="contact_number"
+                value={formData.contact_number}
                 onChange={handleInputChange}
                 placeholder="Enter contact number"
                 required
@@ -160,12 +173,25 @@ export default function DepotManagement() {
                   setFormData((prev) => ({ ...prev, status: value }))
                 }
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full bg-white">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ACTIVE">ACTIVE</SelectItem>
-                  <SelectItem value="INACTIVE">INACTIVE</SelectItem>
+                <SelectContent
+                  position="popper"
+                  className="z-50 bg-white border border-gray-200 rounded-md shadow-lg"
+                >
+                  <SelectItem
+                    value="ACTIVE"
+                    className="text-black hover:bg-gray-100"
+                  >
+                    ACTIVE
+                  </SelectItem>
+                  <SelectItem
+                    value="INACTIVE"
+                    className="text-black hover:bg-gray-100"
+                  >
+                    INACTIVE
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -220,13 +246,15 @@ export default function DepotManagement() {
             <tbody>
               {depots.map((depot) => (
                 <tr
-                  key={depot.id}
+                  key={depot.depot_id}
                   className="border-b border-gray-100 hover:bg-gray-50"
                 >
-                  <td className="py-3 px-4 text-sm font-medium">{depot.id}</td>
-                  <td className="py-3 px-4 text-sm">{depot.name}</td>
+                  <td className="py-3 px-4 text-sm font-medium">
+                    {depot.depot_id}
+                  </td>
+                  <td className="py-3 px-4 text-sm">{depot.depot_name}</td>
                   <td className="py-3 px-4 text-sm">{depot.location}</td>
-                  <td className="py-3 px-4 text-sm">{depot.contact}</td>
+                  <td className="py-3 px-4 text-sm">{depot.contact_number}</td>
                   <td className="py-3 px-4 text-sm">
                     <StatusBadge status={depot.status} />
                   </td>
@@ -239,7 +267,7 @@ export default function DepotManagement() {
                         <Edit2 size={16} />
                       </button>
                       <button
-                        onClick={() => handleDelete(depot.id)}
+                        onClick={() => handleDeleteClick(depot.depot_id)}
                         className="p-1.5 hover:bg-gray-200 rounded text-red-600"
                       >
                         <Trash2 size={16} />
@@ -252,6 +280,14 @@ export default function DepotManagement() {
           </table>
         </div>
       </div>
+
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        onConfirm={confirmDelete}
+        title="Delete Depot"
+        description="Are you sure you want to delete this depot? This action cannot be undone."
+      />
     </div>
   );
 }

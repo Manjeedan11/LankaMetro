@@ -1,5 +1,4 @@
-export default function StatusBadge() {
-  const status = "ACTIVE";
+export default function StatusBadge({ status }) {
   const statusStyles = {
     ACTIVE: "bg-green-100 text-green-800",
     INACTIVE: "bg-gray-100 text-gray-800",

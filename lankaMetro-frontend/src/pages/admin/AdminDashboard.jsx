@@ -1,7 +1,28 @@
 import { MapPin, Users, BusFront, Route } from "lucide-react";
 import StatCard from "@/components/standalone/StatCard";
+import {
+  useGetDepotsQuery,
+  useGetUsersQuery,
+  useGetVehiclesQuery,
+  useGetRoutesQuery,
+} from "@/lib/api";
 
 export default function AdminDashboard() {
+  const { data: depots = [] } = useGetDepotsQuery();
+  const { data: users = [] } = useGetUsersQuery();
+  const { data: vehicles = [] } = useGetVehiclesQuery();
+  const { data: routes = [] } = useGetRoutesQuery();
+
+  const totalDepots = depots.length;
+  const totalUsers = users.length;
+  const activeVehicles = vehicles.filter((v) => v.status === "ACTIVE").length;
+  const activeRoutes = routes.filter((r) => r.availability === "ACTIVE").length;
+
+  const depotTrend = { type: "up", percentage: 5 };
+  const userTrend = { type: "up", percentage: 12 };
+  const vehicleTrend = { type: "down", percentage: 2 };
+  const routeTrend = { type: "up", percentage: 8 };
+
   return (
     <div className="space-y-8 container mx-auto px-4 py-6 max-w-7xl">
       <div className="page-header">
@@ -14,31 +35,31 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Depots"
-          value="12"
+          value={totalDepots}
           icon={MapPin}
           color="primary"
-          trend={{ type: "up", percentage: 5 }}
+          trend={depotTrend}
         />
         <StatCard
           title="Total Users"
-          value="48"
+          value={totalUsers}
           icon={Users}
           color="blue"
-          trend={{ type: "up", percentage: 12 }}
+          trend={userTrend}
         />
         <StatCard
           title="Active Vehicles"
-          value="156"
+          value={activeVehicles}
           icon={BusFront}
           color="green"
-          trend={{ type: "down", percentage: 2 }}
+          trend={vehicleTrend}
         />
         <StatCard
           title="Active Routes"
-          value="34"
+          value={activeRoutes}
           icon={Route}
           color="purple"
-          trend={{ type: "up", percentage: 8 }}
+          trend={routeTrend}
         />
       </div>
 
@@ -51,78 +72,20 @@ export default function AdminDashboard() {
             Route visualization map would be displayed here
           </div>
         </div>
-
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <h2 className="text-lg font-semibold mb-4 text-black">
             Depot Overview
           </h2>
           <div className="space-y-3">
-            <div className="p-3 bg-gray-50 rounded">
-              <p className="text-sm font-medium">Colombo Central</p>
-              <p className="text-xs text-gray-600">45 active routes</p>
-            </div>
-            <div className="p-3 bg-gray-50 rounded">
-              <p className="text-sm font-medium">Kandy Transport Hub</p>
-              <p className="text-xs text-gray-600">32 active routes</p>
-            </div>
-            <div className="p-3 bg-gray-50 rounded">
-              <p className="text-sm font-medium">Galle Depot</p>
-              <p className="text-xs text-gray-600">28 active routes</p>
-            </div>
+            {depots.slice(0, 3).map((depot) => (
+              <div key={depot.depot_id} className="p-3 bg-gray-50 rounded">
+                <p className="text-sm font-medium">{depot.depot_name}</p>
+                <p className="text-xs text-gray-600">
+                  Active routes: Coming soon
+                </p>
+              </div>
+            ))}
           </div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-        <h2 className="text-lg font-semibold mb-4 text-black">
-          Recent Activities
-        </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                  User
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                  Action
-                </th>
-                <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                  Timestamp
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="py-3 px-4 text-sm">John Doe</td>
-                <td className="py-3 px-4 text-sm text-gray-600">
-                  Created new depot
-                </td>
-                <td className="py-3 px-4 text-sm text-gray-500">2 hours ago</td>
-              </tr>
-              <tr className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="py-3 px-4 text-sm">Jane Smith</td>
-                <td className="py-3 px-4 text-sm text-gray-600">
-                  Updated vehicle status
-                </td>
-                <td className="py-3 px-4 text-sm text-gray-500">4 hours ago</td>
-              </tr>
-              <tr className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="py-3 px-4 text-sm">Admin</td>
-                <td className="py-3 px-4 text-sm text-gray-600">
-                  System backup completed
-                </td>
-                <td className="py-3 px-4 text-sm text-gray-500">6 hours ago</td>
-              </tr>
-              <tr className="border-b border-gray-100 hover:bg-gray-50">
-                <td className="py-3 px-4 text-sm">Mike Brown</td>
-                <td className="py-3 px-4 text-sm text-gray-600">
-                  Added new driver
-                </td>
-                <td className="py-3 px-4 text-sm text-gray-500">1 day ago</td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </div>
     </div>
