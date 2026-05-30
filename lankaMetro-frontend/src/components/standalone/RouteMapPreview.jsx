@@ -9,7 +9,6 @@ import {
 import L from "leaflet";
 import { useGetRouteStopsQuery } from "@/lib/api";
 
-// Fix marker icon issue in Leaflet with webpack
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl:
@@ -30,7 +29,6 @@ export default function RouteMapPreview({ routeId }) {
 
   useEffect(() => {
     if (stops && stops.length) {
-      // Filter stops that have both lat and lon
       const coords = stops
         .filter((stop) => stop.latitude && stop.longitude)
         .map((stop) => [stop.latitude, stop.longitude]);

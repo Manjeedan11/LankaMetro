@@ -1,5 +1,6 @@
 import pool from "../db.js";
 import PDFDocument from "pdfkit";
+import { ChartJSNodeCanvas } from "chartjs-node-canvas";
 
 export async function getScheduleReport(depotId, startDate, endDate) {
   const query = `
@@ -56,12 +57,108 @@ export async function getRouteSummary(depotId, days = 30) {
   return result.rows;
 }
 
-export function generateScheduleReportPDF(
+export async function generateScheduleReportPDF(
   schedules,
   startDate,
   endDate,
   depotName
 ) {
+  const width = 300;
+  const height = 300;
+  const chartJSNodeCanvas = new ChartJSNodeCanvas({ width, height });
+
+  const formatDate = (dateValue) => {
+    if (!dateValue) return "";
+    let dateStr;
+    if (typeof dateValue === "object" && dateValue instanceof Date) {
+      dateStr = dateValue.toISOString().split("T")[0];
+    } else if (typeof dateValue === "string") {
+      dateStr = dateValue;
+    } else return "";
+    const parts = dateStr.split("-");
+    if (parts.length !== 3) return dateStr;
+    return `${parts[2]}/${parts[1]}/${parts[0].slice(-2)}`;
+  };
+
+  const total = schedules.length;
+  const completed = schedules.filter((s) => s.status === "COMPLETED").length;
+  const inProgress = schedules.filter((s) => s.status === "IN_PROGRESS").length;
+  const cancelled = schedules.filter((s) => s.status === "CANCELLED").length;
+  const scheduled = total - completed - inProgress - cancelled;
+
+  // Pie chart
+  const pieData = {
+    labels: ["Completed", "In Progress", "Cancelled", "Scheduled"],
+    datasets: [
+      {
+        data: [completed, inProgress, cancelled, scheduled],
+        backgroundColor: ["#4CAF50", "#2196F3", "#F44336", "#FFC107"],
+      },
+    ],
+  };
+
+  // Bar chart (real or mock)
+  const dailyCounts = new Map();
+  schedules.forEach((s) => {
+    let dateKey;
+    if (s.schedule_date instanceof Date) {
+      dateKey = s.schedule_date.toISOString().split("T")[0];
+    } else if (typeof s.schedule_date === "string") {
+      dateKey = s.schedule_date;
+    } else {
+      dateKey = String(s.schedule_date);
+    }
+    dailyCounts.set(dateKey, (dailyCounts.get(dateKey) || 0) + 1);
+  });
+  const days = Array.from(dailyCounts.entries()).sort((a, b) =>
+    a[0].localeCompare(b[0])
+  );
+
+  let barData;
+  if (days.length > 1) {
+    barData = {
+      labels: days.map((d) => formatDate(d[0])),
+      datasets: [
+        {
+          label: "Trips",
+          data: days.map((d) => d[1]),
+          backgroundColor: "#4CAF50",
+        },
+      ],
+    };
+  } else {
+    const mockLabels = [];
+    const mockCounts = [];
+    const today = new Date();
+    for (let i = 4; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(today.getDate() - i);
+      const dateStr = d.toISOString().split("T")[0];
+      mockLabels.push(formatDate(dateStr));
+      const mockValue = [12, 18, 22, 16, 20][i];
+      mockCounts.push(mockValue);
+    }
+    barData = {
+      labels: mockLabels,
+      datasets: [
+        {
+          label: "Trips (sample data)",
+          data: mockCounts,
+          backgroundColor: "#4CAF50",
+        },
+      ],
+    };
+  }
+
+  const pieChartBuffer = await chartJSNodeCanvas.renderToBuffer({
+    type: "pie",
+    data: pieData,
+  });
+  const barChartBuffer = await chartJSNodeCanvas.renderToBuffer({
+    type: "bar",
+    data: barData,
+  });
+
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 40 });
     const chunks = [];
@@ -69,21 +166,72 @@ export function generateScheduleReportPDF(
     doc.on("end", () => resolve(Buffer.concat(chunks)));
     doc.on("error", reject);
 
-    // Title
+    // Header
     doc
       .fontSize(18)
       .font("Helvetica-Bold")
-      .text("SRMSS Schedule Report", { align: "center" });
+      .text("LankaMetro Schedule Report", { align: "center" });
     doc.moveDown(0.5);
     doc
       .fontSize(11)
       .font("Helvetica")
       .text(`Depot: ${depotName}`, { align: "center" });
     doc.text(`Period: ${startDate} to ${endDate}`, { align: "center" });
-    doc.moveDown(1.5);
+    doc.text(`Generated: ${new Date().toLocaleString()}`, { align: "center" });
+    doc.moveDown(1);
 
-    // Column widths (optimised for A4 with 40pt margins)
-    // Total = 70+55+55+110+80+85+60 = 515 (perfect)
+    if (!schedules || schedules.length === 0) {
+      doc.fontSize(12).text("No schedules found for the selected period.", {
+        align: "center",
+      });
+      doc.end();
+      return;
+    }
+
+    // Summary cards
+    const summaryY = doc.y;
+    const cardWidth = (doc.page.width - 80) / 4;
+    const summaryItems = [
+      { label: "Total Schedules", value: total, bg: "#f5f5f5" },
+      { label: "Completed", value: completed, bg: "#4CAF50" },
+      { label: "In Progress", value: inProgress, bg: "#2196F3" },
+      { label: "Cancelled", value: cancelled, bg: "#F44336" },
+    ];
+    let x = 40;
+    summaryItems.forEach((item) => {
+      doc
+        .rect(x, summaryY, cardWidth - 10, 50)
+        .fill(item.bg)
+        .stroke();
+      doc
+        .fillColor("#333")
+        .fontSize(10)
+        .text(item.label, x + 5, summaryY + 5);
+      doc.fontSize(16).text(item.value.toString(), x + 5, summaryY + 20);
+      x += cardWidth;
+    });
+    doc.fillColor("black");
+    doc.moveDown(3.5); // Space after cards
+
+    // Charts side by side
+    const chartAreaWidth = doc.page.width - 80;
+    const halfWidth = chartAreaWidth / 2 - 20;
+
+    // Pie chart (left)
+    doc.fontSize(12).text("Schedule Status", 40, doc.y);
+    const pieImage = doc.openImage(pieChartBuffer);
+    doc.image(pieImage, 40, doc.y + 10, { width: halfWidth });
+
+    // Bar chart (right)
+    doc.fontSize(12).text("Trips per Day", 40 + halfWidth + 20, doc.y);
+    const barImage = doc.openImage(barChartBuffer);
+    doc.image(barImage, 40 + halfWidth + 20, doc.y + 10, { width: halfWidth });
+
+    // Move below charts (add extra space)
+    doc.y += halfWidth + 30; // already moves past the charts
+    doc.moveDown(3.5); // Explicit extra space before table
+
+    // Table
     const colWidths = [70, 55, 55, 110, 80, 85, 65];
     const headers = [
       "Date",
@@ -98,64 +246,52 @@ export function generateScheduleReportPDF(
     let startY = doc.y;
     const rowHeight = 25;
 
-    // Helper to format date YYYY-MM-DD → DD/MM/YY
-    const formatDate = (dateValue) => {
-      if (!dateValue) return "";
-      let dateStr;
-      if (typeof dateValue === "object" && dateValue instanceof Date) {
-        dateStr = dateValue.toISOString().split("T")[0];
-      } else if (typeof dateValue === "string") {
-        dateStr = dateValue;
-      } else {
-        return "";
+    const drawHeader = () => {
+      let currentX = startX;
+      doc
+        .rect(
+          startX,
+          startY,
+          colWidths.reduce((a, b) => a + b, 0),
+          rowHeight
+        )
+        .fill("#e6e6e6");
+      doc.font("Helvetica-Bold").fontSize(10).fillColor("black");
+      headers.forEach((header, i) => {
+        doc.text(header, currentX + 5, startY + 6, {
+          width: colWidths[i] - 10,
+          align: "left",
+        });
+        currentX += colWidths[i];
+      });
+      doc
+        .rect(
+          startX,
+          startY,
+          colWidths.reduce((a, b) => a + b, 0),
+          rowHeight
+        )
+        .stroke();
+      for (let i = 1; i < headers.length; i++) {
+        const x = startX + colWidths.slice(0, i).reduce((a, b) => a + b, 0);
+        doc
+          .moveTo(x, startY)
+          .lineTo(x, startY + rowHeight)
+          .stroke();
       }
-      const parts = dateStr.split("-");
-      if (parts.length !== 3) return dateStr;
-      return `${parts[2]}/${parts[1]}/${parts[0].slice(-2)}`;
+      doc
+        .moveTo(startX + colWidths.reduce((a, b) => a + b, 0), startY)
+        .lineTo(
+          startX + colWidths.reduce((a, b) => a + b, 0),
+          startY + rowHeight
+        )
+        .stroke();
     };
 
-    // Draw header background and borders
-    let currentX = startX;
-    doc
-      .rect(
-        startX,
-        startY,
-        colWidths.reduce((a, b) => a + b, 0),
-        rowHeight
-      )
-      .fill("#e6e6e6");
-    doc.font("Helvetica-Bold").fontSize(10).fillColor("black");
-    headers.forEach((header, i) => {
-      doc.text(header, currentX + 5, startY + 6, {
-        width: colWidths[i] - 10,
-        align: "left",
-      });
-      currentX += colWidths[i];
-    });
-    doc
-      .rect(
-        startX,
-        startY,
-        colWidths.reduce((a, b) => a + b, 0),
-        rowHeight
-      )
-      .stroke();
-    for (let i = 1; i < headers.length; i++) {
-      const x = startX + colWidths.slice(0, i).reduce((a, b) => a + b, 0);
-      doc
-        .moveTo(x, startY)
-        .lineTo(x, startY + rowHeight)
-        .stroke();
-    }
-    doc
-      .moveTo(startX + colWidths.reduce((a, b) => a + b, 0), startY)
-      .lineTo(startX + colWidths.reduce((a, b) => a + b, 0), startY + rowHeight)
-      .stroke();
-
-    // Data rows
+    drawHeader();
     let currentY = startY + rowHeight;
     doc.font("Helvetica").fontSize(9).fillColor("black");
-    schedules.forEach((schedule, index) => {
+    for (const schedule of schedules) {
       const row = [
         formatDate(schedule.schedule_date),
         schedule.departure_time,
@@ -165,17 +301,16 @@ export function generateScheduleReportPDF(
         schedule.driver_name,
         schedule.status,
       ];
-      currentX = startX;
+      let currentX = startX;
       for (let i = 0; i < row.length; i++) {
         let text = String(row[i]);
-        if (i === 3 && text.length > 20) text = text.substring(0, 17) + "..."; // truncate long route
+        if (i === 3 && text.length > 20) text = text.substring(0, 17) + "...";
         doc.text(text, currentX + 5, currentY + 5, {
           width: colWidths[i] - 10,
           align: "left",
         });
         currentX += colWidths[i];
       }
-      // Draw row borders
       doc
         .rect(
           startX,
@@ -199,58 +334,18 @@ export function generateScheduleReportPDF(
         )
         .stroke();
       currentY += rowHeight;
-
       if (currentY > doc.page.height - 70) {
         doc.addPage();
-        currentY = doc.page.margins.top;
-        startY = currentY;
-        // Redraw header on new page
-        doc
-          .rect(
-            startX,
-            startY,
-            colWidths.reduce((a, b) => a + b, 0),
-            rowHeight
-          )
-          .fill("#e6e6e6");
-        doc.font("Helvetica-Bold").fontSize(10).fillColor("black");
-        let tempX = startX;
-        headers.forEach((header, i) => {
-          doc.text(header, tempX + 5, startY + 6, {
-            width: colWidths[i] - 10,
-            align: "left",
-          });
-          tempX += colWidths[i];
-        });
-        doc
-          .rect(
-            startX,
-            startY,
-            colWidths.reduce((a, b) => a + b, 0),
-            rowHeight
-          )
-          .stroke();
-        for (let i = 1; i < headers.length; i++) {
-          const x = startX + colWidths.slice(0, i).reduce((a, b) => a + b, 0);
-          doc
-            .moveTo(x, startY)
-            .lineTo(x, startY + rowHeight)
-            .stroke();
-        }
-        doc
-          .moveTo(startX + colWidths.reduce((a, b) => a + b, 0), startY)
-          .lineTo(
-            startX + colWidths.reduce((a, b) => a + b, 0),
-            startY + rowHeight
-          )
-          .stroke();
+        startY = doc.page.margins.top;
         currentY = startY + rowHeight;
+        drawHeader();
       }
-    });
+    }
 
     doc.end();
   });
 }
+
 export default {
   getScheduleReport,
   getMaintenanceReport,
