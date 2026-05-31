@@ -15,8 +15,12 @@ import {
 } from "@/lib/api";
 
 export default function MaintenanceHistory() {
+  const { data: maintenanceRecords = [], isLoading, isError } = useGetMaintenanceRecordsQuery();
+  const { data: vehicles = [] } = useGetVehiclesQuery();
+
   const [filterVehicle, setFilterVehicle] = useState("all");
   const [filterService, setFilterService] = useState("all");
+
 
   const filteredHistory = mockHistory.filter((item) => {
     const vehicleMatch =
