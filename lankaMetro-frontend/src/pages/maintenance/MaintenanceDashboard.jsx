@@ -83,25 +83,25 @@ const [formData, setFormData] = useState({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="In Maintenance"
-          value="3"
+          value={inMaintenance}
           icon={Wrench}
           color="primary"
         />
         <StatCard
           title="Completed Services"
-          value="24"
+          value={completedServices}
           icon={CheckCircle}
           color="green"
         />
         <StatCard
           title="Pending Services"
-          value="2"
+          value={pendingServices}
           icon={Clock}
           color="blue"
         />
         <StatCard
           title="Active Vehicles"
-          value="42"
+          value={activeVehicles}
           icon={BusFront}
           color="purple"
         />
@@ -115,29 +115,25 @@ const [formData, setFormData] = useState({
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">
-                  Vehicle
-                </label>
+                <label className="block text-sm font-medium mb-2">Vehicle</label>
                 <Select
-                  value={formData.vehicle}
-                  onValueChange={(value) =>
-                    handleSelectChange("vehicle", value)
-                  }
+                  value={formData.vehicle_id}
+                  onValueChange={(value) => handleSelectChange("vehicle_id", value)}
                 >
                   <SelectTrigger className="w-full text-black">
                     <SelectValue placeholder="Select vehicle" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="V001">V001</SelectItem>
-                    <SelectItem value="V002">V002</SelectItem>
-                    <SelectItem value="V003">V003</SelectItem>
+                    {vehicles.map((v) => (
+                      <SelectItem key={v.vehicle_id} value={v.vehicle_id.toString()}>
+                        {v.plate_number} ({v.vehicle_id})
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">
-                  Maintenance Type
-                </label>
+                <label className="block text-sm font-medium mb-2">Maintenance Type</label>
                 <Select
                   value={formData.type}
                   onValueChange={(value) => handleSelectChange("type", value)}
@@ -146,27 +142,22 @@ const [formData, setFormData] = useState({
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Oil Change">Oil Change</SelectItem>
-                    <SelectItem value="Brake Service">Brake Service</SelectItem>
-                    <SelectItem value="Tire Replacement">
-                      Tire Replacement
-                    </SelectItem>
-                    <SelectItem value="Engine Service">
-                      Engine Service
-                    </SelectItem>
+                    <SelectItem value="OIL_CHANGE">Oil Change</SelectItem>
+                    <SelectItem value="BRAKE_SERVICE">Brake Service</SelectItem>
+                    <SelectItem value="TIRE_REPLACEMENT">Tire Replacement</SelectItem>
+                    <SelectItem value="ENGINE_SERVICE">Engine Service</SelectItem>
+                    <SelectItem value="INSPECTION">Inspection</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">
-                  Service Date
-                </label>
+                <label className="block text-sm font-medium mb-2">Service Date</label>
                 <Input
                   type="date"
-                  name="serviceDate"
-                  value={formData.serviceDate}
+                  name="service_date"
+                  value={formData.service_date}
                   onChange={handleInputChange}
                   required
                   className="text-black"
@@ -182,7 +173,7 @@ const [formData, setFormData] = useState({
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="PENDING">PENDING</SelectItem>
+                    <SelectItem value="SCHEDULED">SCHEDULED</SelectItem>
                     <SelectItem value="IN_PROGRESS">IN_PROGRESS</SelectItem>
                     <SelectItem value="COMPLETED">COMPLETED</SelectItem>
                   </SelectContent>
@@ -190,9 +181,7 @@ const [formData, setFormData] = useState({
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Description
-              </label>
+              <label className="block text-sm font-medium mb-2">Description</label>
               <Textarea
                 name="description"
                 value={formData.description}
@@ -218,37 +207,33 @@ const [formData, setFormData] = useState({
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                    Vehicle
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                    Maintenance Type
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                    Date
-                  </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                    Status
-                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Vehicle</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Maintenance Type</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Date</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {maintenanceItems.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="border-b border-gray-100 hover:bg-gray-50"
-                  >
+                {maintenanceRecords.map((item) => (
+                  <tr key={item.maintenance_id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="py-3 px-4 text-sm font-medium text-black">
-                      {item.vehicle}
+                      {item.plate_number || item.vehicle_id}
                     </td>
-                    <td className="py-3 px-4 text-sm text-black">
-                      {item.type}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-black">
-                      {item.date}
-                    </td>
+                    <td className="py-3 px-4 text-sm text-black">{item.type.replace(/_/g, " ")}</td>
+                    <td className="py-3 px-4 text-sm text-black">{item.service_date}</td>
                     <td className="py-3 px-4 text-sm">
                       <StatusBadge status={item.status} />
+                    </td>
+                    <td className="py-3 px-4 text-sm">
+                      {item.status === "IN_PROGRESS" && (
+                        <button
+                          onClick={() => handleComplete(item.maintenance_id)}
+                          className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded hover:bg-green-200"
+                        >
+                          Complete
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
