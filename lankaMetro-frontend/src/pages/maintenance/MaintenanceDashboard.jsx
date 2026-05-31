@@ -60,6 +60,8 @@ const [formData, setFormData] = useState({
   const completedServices = maintenanceRecords.filter(m => m.status === "COMPLETED").length;
   const pendingServices = maintenanceRecords.filter(m => m.status === "PENDING" || m.status === "SCHEDULED").length;
 
+  
+
   const handleSelectChange = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
@@ -69,10 +71,7 @@ const [formData, setFormData] = useState({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log(formData);
-  };
+ 
 
   const buttonBase =
     "border border-gray-300 text-black hover:bg-red-700 hover:text-white transition-colors";
