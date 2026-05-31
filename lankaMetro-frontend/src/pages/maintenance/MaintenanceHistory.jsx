@@ -9,49 +9,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-const mockHistory = [
-  {
-    id: "MH001",
-    vehicle: "V001",
-    service: "Oil Change",
-    description: "Regular oil and filter change",
-    date: "2024-05-26",
-    status: "COMPLETED",
-  },
-  {
-    id: "MH002",
-    vehicle: "V002",
-    service: "Brake Inspection",
-    description: "Brake pads and fluid check",
-    date: "2024-05-25",
-    status: "COMPLETED",
-  },
-  {
-    id: "MH003",
-    vehicle: "V003",
-    service: "Tire Replacement",
-    description: "All four tires replaced",
-    date: "2024-05-24",
-    status: "COMPLETED",
-  },
-  {
-    id: "MH004",
-    vehicle: "V001",
-    service: "Engine Service",
-    description: "Engine diagnostic and tune-up",
-    date: "2024-05-20",
-    status: "COMPLETED",
-  },
-  {
-    id: "MH005",
-    vehicle: "V004",
-    service: "Transmission Service",
-    description: "Fluid change and filter replacement",
-    date: "2024-05-15",
-    status: "COMPLETED",
-  },
-];
+import {
+  useGetMaintenanceRecordsQuery,
+  useGetVehiclesQuery,
+} from "@/lib/api";
 
 export default function MaintenanceHistory() {
   const [filterVehicle, setFilterVehicle] = useState("all");
