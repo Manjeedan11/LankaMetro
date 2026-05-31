@@ -30,6 +30,9 @@ export default function MaintenanceHistory() {
     return vehicleMatch && serviceMatch;
   });
 
+   if (isLoading) return <div className="container mx-auto px-4 py-6">Loading maintenance records...</div>;
+  if (isError) return <div className="container mx-auto px-4 py-6 text-red-600">Error loading maintenance records.</div>;
+
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
       <div className="page-header">
@@ -56,31 +59,27 @@ export default function MaintenanceHistory() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Vehicles</SelectItem>
-                  <SelectItem value="V001">V001</SelectItem>
-                  <SelectItem value="V002">V002</SelectItem>
-                  <SelectItem value="V003">V003</SelectItem>
-                  <SelectItem value="V004">V004</SelectItem>
+                  {vehicleOptions.map(vehicle => (
+                    <SelectItem key={vehicle.id} value={vehicle.id.toString()}>
+                      {vehicle.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Service Type
-              </label>
+              <label className="block text-sm font-medium mb-2">Service Type</label>
               <Select value={filterService} onValueChange={setFilterService}>
                 <SelectTrigger className="w-full text-black">
                   <SelectValue placeholder="Select service type" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Services</SelectItem>
-                  <SelectItem value="Oil Change">Oil Change</SelectItem>
-                  <SelectItem value="Brake Inspection">
-                    Brake Inspection
-                  </SelectItem>
-                  <SelectItem value="Tire Replacement">
-                    Tire Replacement
-                  </SelectItem>
-                  <SelectItem value="Engine Service">Engine Service</SelectItem>
+                  {serviceOptions.map(service => (
+                    <SelectItem key={service} value={service}>
+                      {service.replace(/_/g, " ")}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -115,34 +114,39 @@ export default function MaintenanceHistory() {
                   <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
                     Status
                   </th>
-                </tr>
+                </td>
               </thead>
               <tbody>
-                {filteredHistory.map((record) => (
-                  <tr
-                    key={record.id}
-                    className="border-b border-gray-100 hover:bg-gray-50"
-                  >
-                    <td className="py-3 px-4 text-sm font-medium text-black">
-                      {record.id}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-black">
-                      {record.vehicle}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-black">
-                      {record.service}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">
-                      {record.description}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-black">
-                      {record.date}
-                    </td>
-                    <td className="py-3 px-4 text-sm">
-                      <StatusBadge status={record.status} />
+                {filteredRecords.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="text-center py-6 text-gray-500">
+                      No maintenance records found.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  filteredRecords.map((record) => (
+                    <tr key={record.maintenance_id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="py-3 px-4 text-sm font-medium text-black">
+                        {record.maintenance_id}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-black">
+                        {record.plate_number || `Vehicle ${record.vehicle_id}`}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-black">
+                        {record.type.replace(/_/g, " ")}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-600">
+                        {record.description || "—"}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-black">
+                        {record.service_date}
+                      </td>
+                      <td className="py-3 px-4 text-sm">
+                        <StatusBadge status={record.status} />
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
