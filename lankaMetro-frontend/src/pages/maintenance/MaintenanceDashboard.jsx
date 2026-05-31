@@ -16,29 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 
-const maintenanceItems = [
-  {
-    id: "M001",
-    vehicle: "V001",
-    type: "Oil Change",
-    date: "2024-05-26",
-    status: "COMPLETED",
-  },
-  {
-    id: "M002",
-    vehicle: "V002",
-    type: "Brake Inspection",
-    date: "2024-05-25",
-    status: "COMPLETED",
-  },
-  {
-    id: "M003",
-    vehicle: "V004",
-    type: "Engine Service",
-    date: "2024-05-24",
-    status: "PENDING",
-  },
-];
+
 
 export default function MaintenanceDashboard() {
   
