@@ -20,6 +20,19 @@ export default function MaintenanceHistory() {
 
   const [filterVehicle, setFilterVehicle] = useState("all");
   const [filterService, setFilterService] = useState("all");
+  
+  const vehicleOptions = Array.from(
+    new Map(
+      maintenanceRecords.map(record => [
+        record.vehicle_id,
+        { id: record.vehicle_id, name: record.plate_number || `Vehicle ${record.vehicle_id}` }
+      ])
+    ).values()
+  ).sort((a, b) => a.name.localeCompare(b.name));
+
+  const serviceOptions = Array.from(
+    new Set(maintenanceRecords.map(record => record.type))
+  ).sort();
 
 
   const filteredHistory = mockHistory.filter((item) => {
