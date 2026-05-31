@@ -5,6 +5,8 @@ import StatusBadge from "@/components/standalone/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useSelector } from "react-redux";
+import {  useGetVehiclesQuery,  useGetMaintenanceRecordsQuery,  useCreateMaintenanceMutation,  useCompleteMaintenanceMutation,} from "@/lib/api";
 import {
   Select,
   SelectContent,
@@ -39,13 +41,20 @@ const maintenanceItems = [
 ];
 
 export default function MaintenanceDashboard() {
-  const [formData, setFormData] = useState({
+  
+const { data: vehicles = [] } = useGetVehiclesQuery();  
+const { data: maintenanceRecords = [], refetch } = useGetMaintenanceRecordsQuery();  
+const [createMaintenance] = useCreateMaintenanceMutation();  
+const [completeMaintenance] = useCompleteMaintenanceMutation();
+const [formData, setFormData] = useState({
     vehicle: "",
     type: "",
     serviceDate: "",
     description: "",
     status: "PENDING",
   });
+
+  
 
   const handleSelectChange = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
