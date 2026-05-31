@@ -35,11 +35,9 @@ export default function MaintenanceHistory() {
   ).sort();
 
 
-  const filteredHistory = mockHistory.filter((item) => {
-    const vehicleMatch =
-      filterVehicle === "all" || item.vehicle === filterVehicle;
-    const serviceMatch =
-      filterService === "all" || item.service === filterService;
+  const filteredRecords = maintenanceRecords.filter(record => {
+    const vehicleMatch = filterVehicle === "all" || record.vehicle_id.toString() === filterVehicle;
+    const serviceMatch = filterService === "all" || record.type === filterService;
     return vehicleMatch && serviceMatch;
   });
 
