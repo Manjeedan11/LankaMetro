@@ -71,7 +71,35 @@ const [formData, setFormData] = useState({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
- 
+ const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await createMaintenance(formData).unwrap();
+      refetch();
+      setFormData({
+        vehicle_id: "",
+        type: "",
+        service_date: "",
+        description: "",
+        status: "SCHEDULED",
+      });
+    } catch (err) {
+      console.error("Failed to create maintenance:", err);
+      alert("Error creating maintenance record");
+    }
+  };
+
+  const handleComplete = async (id) => {
+    if (window.confirm("Mark this maintenance as completed?")) {
+      try {
+        await completeMaintenance(id).unwrap();
+        refetch();
+      } catch (err) {
+        alert("Failed to complete maintenance");
+      }
+    }
+  };
+
 
   const buttonBase =
     "border border-gray-300 text-black hover:bg-red-700 hover:text-white transition-colors";
