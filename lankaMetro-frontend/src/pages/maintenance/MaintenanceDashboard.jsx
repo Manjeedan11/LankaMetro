@@ -54,7 +54,11 @@ const [formData, setFormData] = useState({
     status: "PENDING",
   });
 
-  
+  const totalVehicles = vehicles.length;
+  const activeVehicles = vehicles.filter(v => v.status === "ACTIVE").length;
+  const inMaintenance = vehicles.filter(v => v.status === "MAINTENANCE").length;
+  const completedServices = maintenanceRecords.filter(m => m.status === "COMPLETED").length;
+  const pendingServices = maintenanceRecords.filter(m => m.status === "PENDING" || m.status === "SCHEDULED").length;
 
   const handleSelectChange = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
