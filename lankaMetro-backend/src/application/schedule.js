@@ -115,36 +115,78 @@ export const createSchedule = async (req, res, next) => {
     // 6. Generate return trip if requested
     let returnTripId = null;
     if (generate_return) {
-      if (!return_departure_time || !return_arrival_time) {
-        throw new ValidationError(
-          "Return departure and arrival times required"
-        );
+      let return_departure_time_calc, return_arrival_time_calc;
+
+      if (return_departure_time && return_arrival_time) {
+        return_departure_time_calc = return_departure_time;
+        return_arrival_time_calc = return_arrival_time;
+      } else {
+        // Auto-calculate: rest = 30 minutes after forward arrival
+        const REST_MINUTES = 30;
+        // Parse forward arrival time (e.g., "09:00:00")
+        const [arrHour, arrMin] = arrival_time.split(":").map(Number);
+        const forwardDurationMinutes = (() => {
+          const [depHour, depMin] = departure_time.split(":").map(Number);
+          return arrHour * 60 + arrMin - (depHour * 60 + depMin);
+        })();
+        // Return departure = forward arrival + REST_MINUTES
+        let returnDepTotalMinutes = arrHour * 60 + arrMin + REST_MINUTES;
+        let returnDepHour = Math.floor(returnDepTotalMinutes / 60);
+        let returnDepMin = returnDepTotalMinutes % 60;
+        // Wrap to next day if needed (though unlikely within same day)
+        if (returnDepHour >= 24) {
+          // This would span to next day – you may want to reject or adjust date
+          // For simplicity, we assume same day; if not, throw error
+          throw new ValidationError(
+            "Return trip would cross midnight; please adjust manually."
+          );
+        }
+        return_departure_time_calc = `${returnDepHour
+          .toString()
+          .padStart(2, "0")}:${returnDepMin.toString().padStart(2, "0")}:00`;
+        // Return arrival = return departure + forward duration
+        let returnArrTotalMinutes =
+          returnDepTotalMinutes + forwardDurationMinutes;
+        let returnArrHour = Math.floor(returnArrTotalMinutes / 60);
+        let returnArrMin = returnArrTotalMinutes % 60;
+        if (returnArrHour >= 24) {
+          throw new ValidationError(
+            "Return trip would cross midnight; please adjust manually."
+          );
+        }
+        return_arrival_time_calc = `${returnArrHour
+          .toString()
+          .padStart(2, "0")}:${returnArrMin.toString().padStart(2, "0")}:00`;
       }
+
+      // Validate that return times do not overlap with driver/vehicle existing schedules
       const returnDriverOverlap = await scheduleRepository.checkDriverOverlap(
         driver_id,
         schedule_date,
-        return_departure_time,
-        return_arrival_time
+        return_departure_time_calc,
+        return_arrival_time_calc
       );
       if (returnDriverOverlap)
         throw new ValidationError(
           "Return trip would overlap with driver's existing schedule"
         );
+
       const returnVehicleOverlap = await scheduleRepository.checkVehicleOverlap(
         vehicle_id,
         schedule_date,
-        return_departure_time,
-        return_arrival_time
+        return_departure_time_calc,
+        return_arrival_time_calc
       );
       if (returnVehicleOverlap)
         throw new ValidationError(
           "Return trip would overlap with vehicle's existing schedule"
         );
 
-      returnTripId = await returnTripRepository.create({
+      // Create return trip (same route_id for return; you could use a reverse route ID if needed)
+      const returnTripId = await returnTripRepository.create({
         original_schedule_id: scheduleId,
-        departure_time: return_departure_time,
-        arrival_time: return_arrival_time,
+        departure_time: return_departure_time_calc,
+        arrival_time: return_arrival_time_calc,
         status: "SCHEDULED",
         return_route_id: route_id,
       });
