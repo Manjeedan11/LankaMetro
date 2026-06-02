@@ -249,6 +249,18 @@ export const Api = createApi({
       }),
       invalidatesTags: (result, error, { id }) => [{ type: "Schedule", id }],
     }),
+    updateScheduleStatus: builder.mutation({
+      query: ({ id, status }) => ({
+        url: `schedules/${id}/status`,
+        method: "PATCH",
+        body: { status },
+      }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Schedule", id },
+        "Driver",
+      ],
+    }),
+
     deleteSchedule: builder.mutation({
       query: (id) => ({
         url: `schedules/${id}`,

@@ -5,7 +5,6 @@ import Sidebar from "../components/standalone/Sidebar";
 import Navbar from "../components/standalone/Navbar";
 import { logout } from "@/lib/features/authSlice";
 import "leaflet/dist/leaflet.css";
-import { Toaster } from "@/components/ui/sonner";
 
 export default function MainLayout() {
   const token = useSelector((state) => state.auth.token);
@@ -34,7 +33,6 @@ export default function MainLayout() {
         onMenuToggle={() => setSidebarOpen(true)}
         onLogout={handleLogout}
       />
-      <Toaster />
       <main className="lg:ml-56 pt-16">
         <div className="p-6">
           <Outlet />

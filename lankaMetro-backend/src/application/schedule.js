@@ -100,6 +100,19 @@ export const createSchedule = async (req, res, next) => {
     if (vehicleOverlap)
       throw new ValidationError("Vehicle already has a schedule at this time");
 
+    // Checking for exact duplicate schedule (same route, date, departure, arrival)
+    const duplicate = await scheduleRepository.checkExactDuplicate(
+      route_id,
+      schedule_date,
+      departure_time,
+      arrival_time
+    );
+    if (duplicate) {
+      throw new ValidationError(
+        "A schedule with the same route, date and time already exists."
+      );
+    }
+
     // 5. Create schedule
     const scheduleId = await scheduleRepository.create({
       schedule_date,
@@ -251,6 +264,30 @@ export const updateSchedule = async (req, res, next) => {
         throw new ValidationError("Vehicle would have a schedule conflict");
     }
 
+    if (
+      updates.departure_time ||
+      updates.arrival_time ||
+      updates.route_id ||
+      updates.schedule_date
+    ) {
+      const newRouteId = updates.route_id ?? existing.route_id;
+      const newDate = updates.schedule_date ?? existing.schedule_date;
+      const newDeparture = updates.departure_time ?? existing.departure_time;
+      const newArrival = updates.arrival_time ?? existing.arrival_time;
+      const duplicate = await scheduleRepository.checkExactDuplicate(
+        newRouteId,
+        newDate,
+        newDeparture,
+        newArrival,
+        id
+      );
+      if (duplicate) {
+        throw new ValidationError(
+          "Another schedule with the same route, date and time already exists."
+        );
+      }
+    }
+
     const success = await scheduleRepository.update(id, depotId, updates);
     if (!success) throw new NotFoundError("Schedule not found or no changes");
     res.status(200).json({ message: "Schedule updated" });
@@ -269,6 +306,51 @@ export const cancelSchedule = async (req, res, next) => {
     const success = await scheduleRepository.cancel(id, depotId);
     if (!success) throw new NotFoundError("Schedule not found");
     res.status(200).json({ message: "Schedule cancelled" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateScheduleStatus = async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id);
+    const { status } = req.body;
+    const depotId = req.user.depotId;
+
+    if (!status) throw new ValidationError("Status is required");
+
+    const schedule = await scheduleRepository.findById(id, depotId);
+    if (!schedule) throw new NotFoundError("Schedule not found");
+
+    // Update schedule status
+    await scheduleRepository.update(id, depotId, { status });
+
+    // If status is IN_PROGRESS, set driver availability to ON_DUTY
+    if (status === "IN_PROGRESS") {
+      await driverRepository.updateAvailability(
+        schedule.driver_id,
+        "ON_DUTY",
+        depotId
+      );
+    }
+
+    // If status is COMPLETED, check if driver has any remaining schedules today
+    if (status === "COMPLETED") {
+      const remaining = await scheduleRepository.countRemainingToday(
+        schedule.driver_id,
+        schedule.schedule_date,
+        id
+      );
+      if (remaining === 0) {
+        await driverRepository.updateAvailability(
+          schedule.driver_id,
+          "AVAILABLE",
+          depotId
+        );
+      }
+    }
+
+    res.status(200).json({ message: "Schedule status updated" });
   } catch (err) {
     next(err);
   }

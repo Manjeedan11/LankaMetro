@@ -145,6 +145,41 @@ export async function checkVehicleOverlap(
   return result.rowCount > 0;
 }
 
+export async function countRemainingToday(driverId, date, excludeScheduleId) {
+  const result = await pool.query(
+    `SELECT COUNT(*) FROM schedule
+     WHERE driver_id = $1
+       AND schedule_date = $2
+       AND schedule_id != $3
+       AND status IN ('SCHEDULED', 'IN_PROGRESS')`,
+    [driverId, date, excludeScheduleId]
+  );
+  return parseInt(result.rows[0].count);
+}
+
+export async function checkExactDuplicate(
+  routeId,
+  date,
+  departureTime,
+  arrivalTime,
+  excludeScheduleId = null
+) {
+  let query = `
+    SELECT schedule_id FROM schedule
+    WHERE route_id = $1
+      AND schedule_date = $2
+      AND departure_time::text = $3
+      AND arrival_time::text = $4
+  `;
+  const params = [routeId, date, departureTime, arrivalTime];
+  if (excludeScheduleId) {
+    query += ` AND schedule_id != $5`;
+    params.push(excludeScheduleId);
+  }
+  const result = await pool.query(query, params);
+  return result.rowCount > 0;
+}
+
 export default {
   findAll,
   findById,
@@ -153,4 +188,6 @@ export default {
   cancel,
   checkDriverOverlap,
   checkVehicleOverlap,
+  countRemainingToday,
+  checkExactDuplicate,
 };

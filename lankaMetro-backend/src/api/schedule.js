@@ -7,6 +7,7 @@ import {
   createSchedule,
   updateSchedule,
   cancelSchedule,
+  updateScheduleStatus,
 } from "../application/schedule.js";
 
 export const scheduleRouter = express.Router();
@@ -15,6 +16,11 @@ scheduleRouter.use(authenticate);
 
 scheduleRouter.post("/", allowRoles("logistics_officer"), createSchedule);
 scheduleRouter.patch("/:id", allowRoles("logistics_officer"), updateSchedule);
+scheduleRouter.patch(
+  "/:id/status",
+  allowRoles("logistics_officer"),
+  updateScheduleStatus
+);
 scheduleRouter.delete("/:id", allowRoles("logistics_officer"), cancelSchedule);
 
 scheduleRouter.get(

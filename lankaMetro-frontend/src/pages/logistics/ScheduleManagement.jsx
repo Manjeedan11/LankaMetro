@@ -1,5 +1,6 @@
-import { Plus, Edit2, Trash2, AlertCircle } from "lucide-react";
+import { Plus, Edit2, Trash2, AlertCircle, CheckCircle } from "lucide-react";
 import { useState, useEffect } from "react";
+import { Toaster, toast } from "sonner";
 import StatusBadge from "@/components/standalone/StatusBadge";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,19 +23,30 @@ import {
   useDeleteScheduleMutation,
 } from "@/lib/api";
 
+const extractDate = (dateValue) => {
+  if (!dateValue) return "";
+  try {
+    if (typeof dateValue === "string" && dateValue.includes("T")) {
+      const date = new Date(dateValue);
+      return date.toLocaleDateString("en-CA");
+    }
+    const match = String(dateValue).match(/^(\d{4}-\d{2}-\d{2})/);
+    return match ? match[1] : "";
+  } catch {
+    return "";
+  }
+};
+
 export default function ScheduleManagement() {
-  // Queries
   const { data: schedules = [], refetch } = useGetSchedulesQuery();
   const { data: routes = [] } = useGetRoutesQuery();
   const { data: drivers = [] } = useGetDriversQuery();
   const { data: vehicles = [] } = useGetVehiclesQuery();
 
-  // Mutations
   const [createSchedule] = useCreateScheduleMutation();
   const [updateSchedule] = useUpdateScheduleMutation();
   const [deleteSchedule] = useDeleteScheduleMutation();
 
-  // Local state
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -47,19 +59,9 @@ export default function ScheduleManagement() {
     arrival_time: "",
     schedule_date: "",
     generate_return: false,
-    // return times are calculated on backend, not stored in form
   });
-  const [alerts, setAlerts] = useState([]);
 
-  // Helper to format time from "HH:MM:SS" to "HH:MM" for input[type=time]
-  const formatTimeForInput = (timeStr) => {
-    if (!timeStr) return "";
-    const parts = timeStr.split(":");
-    if (parts.length >= 2) return `${parts[0]}:${parts[1]}`;
-    return timeStr;
-  };
-
-  // Pre-fill times when editing (if schedule has departure_time/arrival_time)
+  // Pre-fill when editing
   useEffect(() => {
     if (editingId && schedules.length) {
       const schedule = schedules.find((s) => s.schedule_id === editingId);
@@ -68,10 +70,10 @@ export default function ScheduleManagement() {
           route_id: schedule.route_id?.toString() || "",
           driver_id: schedule.driver_id?.toString() || "",
           vehicle_id: schedule.vehicle_id?.toString() || "",
-          departure_time: formatTimeForInput(schedule.departure_time),
-          arrival_time: formatTimeForInput(schedule.arrival_time),
-          schedule_date: schedule.schedule_date || "",
-          generate_return: false, // return trip is separate; we don't edit it here
+          departure_time: schedule.departure_time?.slice(0, 5) || "",
+          arrival_time: schedule.arrival_time?.slice(0, 5) || "",
+          schedule_date: extractDate(schedule.schedule_date),
+          generate_return: false,
         });
       }
     }
@@ -91,12 +93,51 @@ export default function ScheduleManagement() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setAlerts([]);
+
+    const routeId = parseInt(formData.route_id);
+    const driverId = parseInt(formData.driver_id);
+    const vehicleId = parseInt(formData.vehicle_id);
+    if (isNaN(routeId) || isNaN(driverId) || isNaN(vehicleId)) {
+      toast.error("Please select a valid route, driver, and vehicle.", {
+        icon: <AlertCircle className="h-4 w-4" />,
+        style: { background: "#fee2e2", color: "#b91c1c" },
+      });
+      return;
+    }
+
+    const formatTime = (time) => {
+      if (!time) return "";
+      const parts = time.split(":");
+      if (parts.length === 2) return `${time}:00`;
+      return time;
+    };
+
+    const basePayload = {
+      route_id: routeId,
+      driver_id: driverId,
+      vehicle_id: vehicleId,
+      departure_time: formatTime(formData.departure_time),
+      arrival_time: formatTime(formData.arrival_time),
+      schedule_date: formData.schedule_date,
+    };
+
     try {
       if (editingId) {
-        await updateSchedule({ id: editingId, ...formData }).unwrap();
+        await updateSchedule({ id: editingId, ...basePayload }).unwrap();
+        toast.success("Schedule updated successfully.", {
+          icon: <CheckCircle className="h-4 w-4" />,
+          style: { background: "#dcfce7", color: "#166534" },
+        });
       } else {
-        await createSchedule(formData).unwrap();
+        const createPayload = {
+          ...basePayload,
+          generate_return: formData.generate_return,
+        };
+        await createSchedule(createPayload).unwrap();
+        toast.success("Schedule created successfully.", {
+          icon: <CheckCircle className="h-4 w-4" />,
+          style: { background: "#dcfce7", color: "#166534" },
+        });
       }
       refetch();
       setShowForm(false);
@@ -112,10 +153,12 @@ export default function ScheduleManagement() {
       });
     } catch (err) {
       console.error("Failed to save schedule:", err);
-      // Extract validation error messages from backend response
-      const message = err?.data?.message || "Error saving schedule";
-      setAlerts([message]);
-      // If the backend returns multiple errors, you can handle accordingly
+      const message =
+        err?.data?.message || err?.message || "Error saving schedule";
+      toast.error(message, {
+        icon: <AlertCircle className="h-4 w-4" />,
+        style: { background: "#fee2e2", color: "#b91c1c" },
+      });
     }
   };
 
@@ -133,8 +176,15 @@ export default function ScheduleManagement() {
     try {
       await deleteSchedule(deleteTargetId).unwrap();
       refetch();
+      toast.success("Schedule deleted successfully.", {
+        icon: <CheckCircle className="h-4 w-4" />,
+        style: { background: "#dcfce7", color: "#166534" },
+      });
     } catch (err) {
-      alert("Delete failed");
+      toast.error("Failed to delete schedule.", {
+        icon: <AlertCircle className="h-4 w-4" />,
+        style: { background: "#fee2e2", color: "#b91c1c" },
+      });
     } finally {
       setDeleteDialogOpen(false);
       setDeleteTargetId(null);
@@ -146,35 +196,11 @@ export default function ScheduleManagement() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
+      <Toaster position="bottom-right" richColors={false} />
       <div className="page-header">
         <h1 className="page-title">Schedule Management</h1>
         <p className="page-description">Create and manage trip schedules</p>
       </div>
-
-      {alerts.length > 0 && (
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardContent className="p-4">
-            <div className="flex gap-3">
-              <AlertCircle
-                className="text-yellow-600 flex-shrink-0 mt-0.5"
-                size={20}
-              />
-              <div>
-                <h3 className="font-semibold text-yellow-900 mb-2">
-                  Validation Alerts
-                </h3>
-                <ul className="space-y-1">
-                  {alerts.map((alert, idx) => (
-                    <li key={idx} className="text-sm text-yellow-800">
-                      • {alert}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <Button
         onClick={() => {
@@ -188,7 +214,6 @@ export default function ScheduleManagement() {
             schedule_date: "",
             generate_return: false,
           });
-          setAlerts([]);
           setShowForm(!showForm);
         }}
         className={`bg-primary ${buttonBase}`}
@@ -198,7 +223,7 @@ export default function ScheduleManagement() {
       </Button>
 
       {showForm && (
-        <Card className="border border-gray-200 shadow-sm">
+        <Card className="border border-gray-200 shadow-sm overflow-visible">
           <CardHeader>
             <CardTitle>
               {editingId ? "Edit Schedule" : "Create New Schedule"}
@@ -220,66 +245,13 @@ export default function ScheduleManagement() {
                     <SelectTrigger className="w-full text-black">
                       <SelectValue placeholder="Select route" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
                       {routes.map((route) => (
                         <SelectItem
                           key={route.route_id}
                           value={route.route_id.toString()}
                         >
                           {route.route_name} ({route.route_no})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Assign Driver
-                  </label>
-                  <Select
-                    value={formData.driver_id}
-                    onValueChange={(value) =>
-                      handleSelectChange("driver_id", value)
-                    }
-                  >
-                    <SelectTrigger className="w-full text-black">
-                      <SelectValue placeholder="Select driver" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {drivers.map((driver) => (
-                        <SelectItem
-                          key={driver.driver_id}
-                          value={driver.driver_id.toString()}
-                        >
-                          {driver.full_name} ({driver.availability})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Assign Vehicle
-                  </label>
-                  <Select
-                    value={formData.vehicle_id}
-                    onValueChange={(value) =>
-                      handleSelectChange("vehicle_id", value)
-                    }
-                  >
-                    <SelectTrigger className="w-full text-black">
-                      <SelectValue placeholder="Select vehicle" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {vehicles.map((vehicle) => (
-                        <SelectItem
-                          key={vehicle.vehicle_id}
-                          value={vehicle.vehicle_id.toString()}
-                        >
-                          {vehicle.plate_number} ({vehicle.status})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -324,6 +296,59 @@ export default function ScheduleManagement() {
                     required
                     className="text-black"
                   />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Assign Driver
+                  </label>
+                  <Select
+                    value={formData.driver_id}
+                    onValueChange={(value) =>
+                      handleSelectChange("driver_id", value)
+                    }
+                  >
+                    <SelectTrigger className="w-full text-black">
+                      <SelectValue placeholder="Select driver" />
+                    </SelectTrigger>
+                    <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
+                      {drivers.map((driver) => (
+                        <SelectItem
+                          key={driver.driver_id}
+                          value={driver.driver_id.toString()}
+                        >
+                          {driver.full_name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Assign Vehicle
+                  </label>
+                  <Select
+                    value={formData.vehicle_id}
+                    onValueChange={(value) =>
+                      handleSelectChange("vehicle_id", value)
+                    }
+                  >
+                    <SelectTrigger className="w-full text-black">
+                      <SelectValue placeholder="Select vehicle" />
+                    </SelectTrigger>
+                    <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
+                      {vehicles.map((vehicle) => (
+                        <SelectItem
+                          key={vehicle.vehicle_id}
+                          value={vehicle.vehicle_id.toString()}
+                        >
+                          {vehicle.plate_number}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -418,7 +443,7 @@ export default function ScheduleManagement() {
                       {schedule.plate_number || schedule.vehicle_id}
                     </td>
                     <td className="py-3 px-4 text-sm text-black">
-                      {schedule.schedule_date}
+                      {extractDate(schedule.schedule_date)}
                     </td>
                     <td className="py-3 px-4 text-sm text-black">
                       {schedule.departure_time}
