@@ -9,40 +9,55 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  useGetMaintenanceRecordsQuery,
-  useGetVehiclesQuery,
-} from "@/lib/api";
+import { useGetMaintenanceRecordsQuery, useGetVehiclesQuery } from "@/lib/api";
 
 export default function MaintenanceHistory() {
-  const { data: maintenanceRecords = [], isLoading, isError } = useGetMaintenanceRecordsQuery();
+  const {
+    data: maintenanceRecords = [],
+    isLoading,
+    isError,
+  } = useGetMaintenanceRecordsQuery();
   const { data: vehicles = [] } = useGetVehiclesQuery();
 
   const [filterVehicle, setFilterVehicle] = useState("all");
   const [filterService, setFilterService] = useState("all");
-  
+
   const vehicleOptions = Array.from(
     new Map(
-      maintenanceRecords.map(record => [
+      maintenanceRecords.map((record) => [
         record.vehicle_id,
-        { id: record.vehicle_id, name: record.plate_number || `Vehicle ${record.vehicle_id}` }
+        {
+          id: record.vehicle_id,
+          name: record.plate_number || `Vehicle ${record.vehicle_id}`,
+        },
       ])
     ).values()
   ).sort((a, b) => a.name.localeCompare(b.name));
 
   const serviceOptions = Array.from(
-    new Set(maintenanceRecords.map(record => record.type))
+    new Set(maintenanceRecords.map((record) => record.type))
   ).sort();
 
-
-  const filteredRecords = maintenanceRecords.filter(record => {
-    const vehicleMatch = filterVehicle === "all" || record.vehicle_id.toString() === filterVehicle;
-    const serviceMatch = filterService === "all" || record.type === filterService;
+  const filteredRecords = maintenanceRecords.filter((record) => {
+    const vehicleMatch =
+      filterVehicle === "all" || record.vehicle_id.toString() === filterVehicle;
+    const serviceMatch =
+      filterService === "all" || record.type === filterService;
     return vehicleMatch && serviceMatch;
   });
 
-   if (isLoading) return <div className="container mx-auto px-4 py-6">Loading maintenance records...</div>;
-  if (isError) return <div className="container mx-auto px-4 py-6 text-red-600">Error loading maintenance records.</div>;
+  if (isLoading)
+    return (
+      <div className="container mx-auto px-4 py-6">
+        Loading maintenance records...
+      </div>
+    );
+  if (isError)
+    return (
+      <div className="container mx-auto px-4 py-6 text-red-600">
+        Error loading maintenance records.
+      </div>
+    );
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
@@ -70,7 +85,7 @@ export default function MaintenanceHistory() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Vehicles</SelectItem>
-                  {vehicleOptions.map(vehicle => (
+                  {vehicleOptions.map((vehicle) => (
                     <SelectItem key={vehicle.id} value={vehicle.id.toString()}>
                       {vehicle.name}
                     </SelectItem>
@@ -79,14 +94,16 @@ export default function MaintenanceHistory() {
               </Select>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">Service Type</label>
+              <label className="block text-sm font-medium mb-2">
+                Service Type
+              </label>
               <Select value={filterService} onValueChange={setFilterService}>
                 <SelectTrigger className="w-full text-black">
                   <SelectValue placeholder="Select service type" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Services</SelectItem>
-                  {serviceOptions.map(service => (
+                  {serviceOptions.map((service) => (
                     <SelectItem key={service} value={service}>
                       {service.replace(/_/g, " ")}
                     </SelectItem>
@@ -125,7 +142,7 @@ export default function MaintenanceHistory() {
                   <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
                     Status
                   </th>
-                </td>
+                </tr>
               </thead>
               <tbody>
                 {filteredRecords.length === 0 ? (
@@ -136,7 +153,10 @@ export default function MaintenanceHistory() {
                   </tr>
                 ) : (
                   filteredRecords.map((record) => (
-                    <tr key={record.maintenance_id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <tr
+                      key={record.maintenance_id}
+                      className="border-b border-gray-100 hover:bg-gray-50"
+                    >
                       <td className="py-3 px-4 text-sm font-medium text-black">
                         {record.maintenance_id}
                       </td>
