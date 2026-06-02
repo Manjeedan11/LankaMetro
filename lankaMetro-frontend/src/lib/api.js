@@ -388,6 +388,19 @@ export const Api = createApi({
       }),
       keepUnusedDataFor: 0,
     }),
+
+    exportMaintenanceReportPDF: builder.query({
+      query: ({ startDate, endDate, vehicleId }) => {
+        let url = `reports/maintenance/pdf?startDate=${startDate}&endDate=${endDate}`;
+        if (vehicleId && vehicleId !== "all") url += `&vehicleId=${vehicleId}`;
+        return {
+          url,
+          method: "GET",
+          responseHandler: (response) => response.blob(),
+        };
+      },
+      keepUnusedDataFor: 0,
+    }),
   }),
 });
 
@@ -454,4 +467,5 @@ export const {
   useGetMaintenanceReportQuery,
   useGetRouteSummaryQuery,
   useExportScheduleReportPDFQuery,
+  useExportMaintenanceReportPDFQuery,
 } = Api;

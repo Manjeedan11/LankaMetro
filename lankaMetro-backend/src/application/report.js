@@ -87,3 +87,36 @@ export const exportScheduleReportPDF = async (req, res, next) => {
     next(err);
   }
 };
+
+export const exportMaintenanceReportPDF = async (req, res, next) => {
+  try {
+    const depotId = req.user.depotId;
+    const { startDate, endDate, vehicleId } = req.query;
+    if (!startDate || !endDate) {
+      throw new ValidationError("startDate and endDate are required");
+    }
+    const records = await reportRepository.getMaintenanceReport(
+      depotId,
+      startDate,
+      endDate,
+      vehicleId || null
+    );
+    const depot = await depotRepository.findById(depotId);
+    const depotName = depot ? depot.depot_name : "Unknown Depot";
+
+    const pdfBuffer = await reportRepository.generateMaintenanceReportPDF(
+      records,
+      startDate,
+      endDate,
+      depotName
+    );
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=maintenance_report_${startDate}_to_${endDate}.pdf`
+    );
+    res.send(pdfBuffer);
+  } catch (err) {
+    next(err);
+  }
+};

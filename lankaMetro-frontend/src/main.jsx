@@ -22,6 +22,7 @@ import DriverTrips from "./pages/driver/DriverTrips";
 import DriverHistory from "./pages/driver/DriverHistory";
 import MainLayout from "./layouts/MainLayout";
 import StopManagement from "./pages/logistics/StopManagement";
+import MaintenanceReports from "./pages/maintenance/MaintenanceReports";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -63,6 +64,10 @@ createRoot(document.getElementById("root")).render(
             <Route
               path="/maintenance/history"
               element={<MaintenanceHistory />}
+            />
+            <Route
+              path="/maintenance/reports"
+              element={<MaintenanceReports />}
             />
 
             <Route path="/driver/dashboard" element={<DriverTrips />} />

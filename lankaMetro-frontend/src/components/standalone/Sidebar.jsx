@@ -49,6 +49,7 @@ const menuItems = {
       path: "/maintenance/dashboard",
     },
     { icon: Wrench, label: "Maintenance", path: "/maintenance/history" },
+    { icon: TrendingUp, label: "Reports", path: "/maintenance/reports" },
   ],
   driver: [
     { icon: Route, label: "Trips", path: "/driver/trips" },
