@@ -16,9 +16,7 @@ export const getDepotById = async (req, res, next) => {
   try {
     const id = parseInt(req.params.id);
     const depot = await depotRepository.findById(id);
-    if (!depot) {
-      throw new NotFoundError("Depot not found");
-    }
+    if (!depot) throw new NotFoundError("Depot not found");
     res.status(200).json(depot);
   } catch (error) {
     next(error);
@@ -32,6 +30,8 @@ export const createDepot = async (req, res, next) => {
       location,
       contact_number,
       status = "ACTIVE",
+      latitude,
+      longitude,
     } = req.body;
 
     if (!depot_name || !location || !contact_number) {
@@ -45,6 +45,8 @@ export const createDepot = async (req, res, next) => {
       location,
       contact_number,
       status,
+      latitude: latitude ? parseFloat(latitude) : null,
+      longitude: longitude ? parseFloat(longitude) : null,
     });
 
     await logAction(
@@ -67,15 +69,17 @@ export const updateDepot = async (req, res, next) => {
     const id = parseInt(req.params.id);
     const updates = req.body;
 
+    // Convert latitude/longitude strings to numbers if present
+    if (updates.latitude !== undefined)
+      updates.latitude = parseFloat(updates.latitude);
+    if (updates.longitude !== undefined)
+      updates.longitude = parseFloat(updates.longitude);
+
     const existing = await depotRepository.findById(id);
-    if (!existing) {
-      throw new NotFoundError("Depot not found");
-    }
+    if (!existing) throw new NotFoundError("Depot not found");
 
     const success = await depotRepository.update(id, updates);
-    if (!success) {
-      throw new NotFoundError("Depot not found or no changes");
-    }
+    if (!success) throw new NotFoundError("Depot not found or no changes");
 
     await logAction(
       req.user,
@@ -94,14 +98,10 @@ export const deleteDepot = async (req, res, next) => {
   try {
     const id = parseInt(req.params.id);
     const existing = await depotRepository.findById(id);
-    if (!existing) {
-      throw new NotFoundError("Depot not found");
-    }
+    if (!existing) throw new NotFoundError("Depot not found");
 
     const success = await depotRepository.disable(id);
-    if (!success) {
-      throw new NotFoundError("Depot not found");
-    }
+    if (!success) throw new NotFoundError("Depot not found");
 
     await logAction(
       req.user,

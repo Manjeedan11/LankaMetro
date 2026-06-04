@@ -1,5 +1,7 @@
 import { MapPin, Users, BusFront, Route } from "lucide-react";
 import StatCard from "@/components/standalone/StatCard";
+import DepotMap from "@/components/standalone/DepotMap";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   useGetDepotsQuery,
   useGetUsersQuery,
@@ -64,14 +66,15 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Depot Map Card */}
         <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <h2 className="text-lg font-semibold mb-4 text-black">
-            Route Map Preview
+            Depot Locations
           </h2>
-          <div className="bg-gray-100 h-64 rounded-lg flex items-center justify-center text-gray-500">
-            Route visualization map would be displayed here
-          </div>
+          <DepotMap />
         </div>
+
+        {/* Depot Overview Card */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
           <h2 className="text-lg font-semibold mb-4 text-black">
             Depot Overview
@@ -81,7 +84,9 @@ export default function AdminDashboard() {
               <div key={depot.depot_id} className="p-3 bg-gray-50 rounded">
                 <p className="text-sm font-medium">{depot.depot_name}</p>
                 <p className="text-xs text-gray-600">
-                  Active routes: Coming soon
+                  {depot.latitude && depot.longitude
+                    ? "📍 Located"
+                    : "⚠️ No coordinates"}
                 </p>
               </div>
             ))}

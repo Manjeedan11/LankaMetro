@@ -37,6 +37,8 @@ export default function DepotManagement() {
     location: "",
     contact_number: "",
     status: "ACTIVE",
+    latitude: "",
+    longitude: "",
   });
 
   const handleInputChange = (e) => {
@@ -47,10 +49,16 @@ export default function DepotManagement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      // Convert latitude/longitude to numbers or null
+      const payload = {
+        ...formData,
+        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
+        longitude: formData.longitude ? parseFloat(formData.longitude) : null,
+      };
       if (editingId) {
-        await updateDepot({ id: editingId, ...formData }).unwrap();
+        await updateDepot({ id: editingId, ...payload }).unwrap();
       } else {
-        await createDepot(formData).unwrap();
+        await createDepot(payload).unwrap();
       }
       refetch();
       setShowForm(false);
@@ -60,6 +68,8 @@ export default function DepotManagement() {
         location: "",
         contact_number: "",
         status: "ACTIVE",
+        latitude: "",
+        longitude: "",
       });
     } catch (err) {
       console.error("Failed to save depot:", err);
@@ -73,6 +83,8 @@ export default function DepotManagement() {
       location: depot.location,
       contact_number: depot.contact_number,
       status: depot.status,
+      latitude: depot.latitude?.toString() || "",
+      longitude: depot.longitude?.toString() || "",
     });
     setEditingId(depot.depot_id);
     setShowForm(true);
@@ -113,6 +125,8 @@ export default function DepotManagement() {
             location: "",
             contact_number: "",
             status: "ACTIVE",
+            latitude: "",
+            longitude: "",
           });
           setShowForm(!showForm);
         }}
@@ -164,6 +178,34 @@ export default function DepotManagement() {
                 placeholder="Enter contact number"
                 required
               />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Latitude
+                </label>
+                <Input
+                  type="number"
+                  step="any"
+                  name="latitude"
+                  value={formData.latitude}
+                  onChange={handleInputChange}
+                  placeholder="e.g., 6.9271"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Longitude
+                </label>
+                <Input
+                  type="number"
+                  step="any"
+                  name="longitude"
+                  value={formData.longitude}
+                  onChange={handleInputChange}
+                  placeholder="e.g., 79.8612"
+                />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium mb-2">Status</label>
@@ -224,10 +266,10 @@ export default function DepotManagement() {
             <thead>
               <tr className="border-b border-gray-200">
                 <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                  Depot ID
+                  ID
                 </th>
                 <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                  Depot Name
+                  Name
                 </th>
                 <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
                   Location
