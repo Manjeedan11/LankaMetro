@@ -401,6 +401,33 @@ export const Api = createApi({
       },
       keepUnusedDataFor: 0,
     }),
+
+    // ========== SYSTEM LOGS ==========
+    getSystemLogs: builder.query({
+      query: ({ page = 1, limit = 50, startDate, endDate, userId, action }) => {
+        let url = `system-logs?page=${page}&limit=${limit}`;
+        if (startDate) url += `&startDate=${startDate}`;
+        if (endDate) url += `&endDate=${endDate}`;
+        if (userId) url += `&userId=${userId}`;
+        if (action) url += `&action=${action}`;
+        return url;
+      },
+      providesTags: ["SystemLog"],
+    }),
+
+    // ========== SYSTEM SETTINGS ==========
+    getSystemSettings: builder.query({
+      query: () => `system-settings`,
+      providesTags: ["SystemSetting"],
+    }),
+    updateSystemSetting: builder.mutation({
+      query: ({ key, value }) => ({
+        url: `system-settings/${key}`,
+        method: "PATCH",
+        body: { value },
+      }),
+      invalidatesTags: ["SystemSetting"],
+    }),
   }),
 });
 
@@ -468,4 +495,8 @@ export const {
   useGetRouteSummaryQuery,
   useExportScheduleReportPDFQuery,
   useExportMaintenanceReportPDFQuery,
+
+  useGetSystemLogsQuery,
+  useGetSystemSettingsQuery,
+  useUpdateSystemSettingMutation,
 } = Api;

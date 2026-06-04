@@ -16,6 +16,8 @@ import { scheduleRouter } from "./api/schedule.js";
 import { notificationRouter } from "./api/notification.js";
 import { reportRouter } from "./api/reportRouter.js";
 import cors from "cors";
+import { systemLogRouter } from "./api/systemLog.js";
+import { systemSettingsRouter } from "./api/systemSettings.js";
 
 const app = express();
 app.use(express.json());
@@ -32,6 +34,8 @@ app.use("/api/drivers", driverRouter);
 app.use("/api/schedules", scheduleRouter);
 app.use("/api/notifications", notificationRouter);
 app.use("/api/reports", reportRouter);
+app.use("/api/system-logs", systemLogRouter);
+app.use("/api/system-settings", systemSettingsRouter);
 app.use("/api/auth", authRouter);
 
 app.use(globalErrorHandlingMiddleware);

@@ -23,6 +23,8 @@ import DriverHistory from "./pages/driver/DriverHistory";
 import MainLayout from "./layouts/MainLayout";
 import StopManagement from "./pages/logistics/StopManagement";
 import MaintenanceReports from "./pages/maintenance/MaintenanceReports";
+import SystemLogs from "./pages/admin/SystemLogs";
+import SystemSettings from "./pages/admin/SystemSettings";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -37,6 +39,8 @@ createRoot(document.getElementById("root")).render(
             <Route path="/admin/depots" element={<DepotManagement />} />
             <Route path="/admin/users" element={<UserManagement />} />
             <Route path="/admin/vehicles" element={<VehicleManagement />} />
+            <Route path="/admin/logs" element={<SystemLogs />} />
+            <Route path="/admin/settings" element={<SystemSettings />} />
 
             <Route
               path="/logistics/dashboard"
