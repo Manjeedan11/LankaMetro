@@ -15,6 +15,7 @@ import {
   TrendingUp,
   List,
   X,
+  OctagonMinus,
 } from "lucide-react";
 
 const menuItems = {
@@ -29,7 +30,7 @@ const menuItems = {
   logistics: [
     { icon: LayoutDashboard, label: "Dashboard", path: "/logistics/dashboard" },
     { icon: Route, label: "Routes", path: "/logistics/routes" },
-    { icon: Route, label: "Stops", path: "/logistics/stops" },
+    { icon: OctagonMinus, label: "Stops", path: "/logistics/stops" },
     { icon: CalendarDays, label: "Schedule", path: "/logistics/schedules" },
     { icon: TrendingUp, label: "Reports", path: "/logistics/reports" },
   ],

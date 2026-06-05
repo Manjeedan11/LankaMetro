@@ -316,16 +316,22 @@ export const updateScheduleStatus = async (req, res, next) => {
     const id = parseInt(req.params.id);
     const { status } = req.body;
     const depotId = req.user.depotId;
+    const userRole = req.user.role;
 
     if (!status) throw new ValidationError("Status is required");
 
     const schedule = await scheduleRepository.findById(id, depotId);
     if (!schedule) throw new NotFoundError("Schedule not found");
 
-    // Update schedule status
+    if (userRole === "driver") {
+      const driver = await driverRepository.findByUserId(req.user.userId);
+      if (!driver || schedule.driver_id !== driver.driver_id) {
+        throw new ValidationError("You can only update your own trips");
+      }
+    }
+
     await scheduleRepository.update(id, depotId, { status });
 
-    // If status is IN_PROGRESS, set driver availability to ON_DUTY
     if (status === "IN_PROGRESS") {
       await driverRepository.updateAvailability(
         schedule.driver_id,
@@ -334,7 +340,6 @@ export const updateScheduleStatus = async (req, res, next) => {
       );
     }
 
-    // If status is COMPLETED, check if driver has any remaining schedules today
     if (status === "COMPLETED") {
       const remaining = await scheduleRepository.countRemainingToday(
         schedule.driver_id,
@@ -351,6 +356,34 @@ export const updateScheduleStatus = async (req, res, next) => {
     }
 
     res.status(200).json({ message: "Schedule status updated" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getMySchedules = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const driver = await driverRepository.findByUserId(userId);
+    if (!driver) throw new NotFoundError("Driver not found");
+    const today = new Date().toISOString().split("T")[0];
+    const schedules = await scheduleRepository.findByDriverAndDate(
+      driver.driver_id,
+      today
+    );
+    res.status(200).json(schedules);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getMyHistory = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const driver = await driverRepository.findByUserId(userId);
+    if (!driver) throw new NotFoundError("Driver not found");
+    const schedules = await scheduleRepository.findByDriver(driver.driver_id);
+    res.status(200).json(schedules);
   } catch (err) {
     next(err);
   }

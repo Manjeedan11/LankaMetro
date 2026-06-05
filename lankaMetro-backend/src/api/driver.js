@@ -7,6 +7,7 @@ import {
   updateDriver,
   updateDriverAvailability,
   getAvailableDrivers,
+  getMyDriverInfo,
 } from "../application/driver.js";
 
 export const driverRouter = express.Router();
@@ -33,3 +34,5 @@ driverRouter.get(
 driverRouter.patch("/:id", updateDriver);
 
 driverRouter.patch("/:id/availability", updateDriverAvailability);
+
+driverRouter.get("/me", authenticate, allowRoles("driver"), getMyDriverInfo);

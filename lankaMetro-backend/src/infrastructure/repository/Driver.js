@@ -31,7 +31,7 @@ export async function findById(id, depotId, isAdmin = false) {
 }
 
 export async function findByUserId(userId) {
-  const result = await pool.query(`SELECT * FROM driver WHERE user_id = $1`, [
+  const result = await pool.query("SELECT * FROM driver WHERE user_id = $1", [
     userId,
   ]);
   return result.rows[0] || null;

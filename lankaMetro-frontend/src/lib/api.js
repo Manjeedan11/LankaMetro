@@ -268,6 +268,14 @@ export const Api = createApi({
       }),
       invalidatesTags: ["Schedule"],
     }),
+    getMySchedules: builder.query({
+      query: () => `schedules/my`,
+      providesTags: ["Schedule"],
+    }),
+    getMyHistory: builder.query({
+      query: () => `schedules/history`,
+      providesTags: ["Schedule"],
+    }),
 
     // ========== DRIVERS ==========
     getDrivers: builder.query({
@@ -473,6 +481,9 @@ export const {
   useCreateScheduleMutation,
   useUpdateScheduleMutation,
   useDeleteScheduleMutation,
+  useUpdateScheduleStatusMutation,
+  useGetMySchedulesQuery,
+  useGetMyHistoryQuery,
 
   useGetDriversQuery,
   useGetDriverByIdQuery,

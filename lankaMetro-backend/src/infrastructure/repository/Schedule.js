@@ -40,6 +40,19 @@ export async function findById(id, depotId) {
   return result.rows[0] || null;
 }
 
+export async function findByDriver(driverId) {
+  const result = await pool.query(
+    `SELECT s.*, r.route_name, v.plate_number
+     FROM schedule s
+     JOIN route r ON s.route_id = r.route_id
+     JOIN vehicle v ON s.vehicle_id = v.vehicle_id
+     WHERE s.driver_id = $1
+     ORDER BY s.schedule_date DESC, s.departure_time DESC`,
+    [driverId]
+  );
+  return result.rows;
+}
+
 export async function create(scheduleData) {
   const {
     schedule_date,
@@ -180,9 +193,23 @@ export async function checkExactDuplicate(
   return result.rowCount > 0;
 }
 
+export async function findByDriverAndDate(driverId, date) {
+  const result = await pool.query(
+    `SELECT s.*, r.route_name, v.plate_number
+     FROM schedule s
+     JOIN route r ON s.route_id = r.route_id
+     JOIN vehicle v ON s.vehicle_id = v.vehicle_id
+     WHERE s.driver_id = $1 AND s.schedule_date = $2
+     ORDER BY s.departure_time`,
+    [driverId, date]
+  );
+  return result.rows;
+}
+
 export default {
   findAll,
   findById,
+  findByDriver,
   create,
   update,
   cancel,
@@ -190,4 +217,5 @@ export default {
   checkVehicleOverlap,
   countRemainingToday,
   checkExactDuplicate,
+  findByDriverAndDate,
 };

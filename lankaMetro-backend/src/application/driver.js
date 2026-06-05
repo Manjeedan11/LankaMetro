@@ -1,4 +1,5 @@
 import driverRepository from "../infrastructure/repository/Driver.js";
+import userRepository from "../infrastructure/repository/User.js";
 import ValidationError from "../domain/errors/validation-error.js";
 import NotFoundError from "../domain/errors/not-found-error.js";
 
@@ -21,6 +22,24 @@ export const getDriverById = async (req, res, next) => {
     res.status(200).json(driver);
   } catch (error) {
     next(error);
+  }
+};
+
+export const getMyDriverInfo = async (req, res, next) => {
+  try {
+    const userId = req.user.userId;
+    const driver = await driverRepository.findByUserId(userId);
+    if (!driver) throw new NotFoundError("Driver record not found");
+    const user = await userRepository.findById(userId); // if needed
+    res.status(200).json({
+      driver_id: driver.driver_id,
+      full_name: user.full_name,
+      license_number: driver.license_number,
+      license_expiry: driver.license_expiry,
+      availability: driver.availability,
+    });
+  } catch (err) {
+    next(err);
   }
 };
 
