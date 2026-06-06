@@ -2,33 +2,15 @@ import { Play, CheckCircle, AlertCircle } from "lucide-react";
 import StatusBadge from "@/components/standalone/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  useGetMySchedulesQuery,
+  useUpdateScheduleStatusMutation,
+  useGetNotificationsQuery,
+} from "@/lib/api";
+import { toast } from "sonner";
 
-const mockTrips = {
-  forward: {
-    id: "T001",
-    route: "R001 - Colombo to Kandy",
-    vehicle: "V001 (WP-CD-1234)",
-    departure: "08:00 AM",
-    arrival: "11:00 AM",
-    status: "SCHEDULED",
-    passengers: "42/45",
-  },
-  return: {
-    id: "T002",
-    route: "R001 - Kandy to Colombo",
-    vehicle: "V001 (WP-CD-1234)",
-    departure: "01:00 PM",
-    arrival: "04:00 PM",
-    status: "SCHEDULED",
-    passengers: "TBD",
-  },
-};
 
-const notifications = [
-  "Your trip scheduled for today at 8:00 AM",
-  "Weather alert: Heavy rain expected on route",
-  "Vehicle maintenance reminder: Next due in 5 days",
-];
+
 
 export default function DriverTrips() {
   const buttonBase =
