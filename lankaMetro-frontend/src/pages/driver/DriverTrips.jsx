@@ -13,8 +13,10 @@ import { toast } from "sonner";
 
 
 export default function DriverTrips() {
-  const buttonBase =
+const buttonBase =
     "border border-gray-300 text-black hover:bg-red-700 hover:text-white transition-colors";
+
+  if (isLoading) return <div className="p-6">Loading your trips...</div>;
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-4xl space-y-6">
@@ -24,120 +26,137 @@ export default function DriverTrips() {
       </div>
 
       <div className="space-y-6">
-        <Card className="border border-gray-200 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Forward Trip</CardTitle>
-            <StatusBadge status={mockTrips.forward.status} />
-          </CardHeader>
-          <CardContent>
-            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Trip ID</span>
-                <span className="text-sm font-medium text-black">
-                  {mockTrips.forward.id}
-                </span>
+        {forwardTrip && (
+          <Card className="border border-gray-200 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Forward Trip</CardTitle>
+              <StatusBadge status={forwardTrip.status} />
+            </CardHeader>
+            <CardContent>
+              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Trip ID</span>
+                  <span className="text-sm font-medium text-black">
+                    {forwardTrip.schedule_id}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Route</span>
+                  <span className="text-sm font-medium text-black">
+                    {forwardTrip.route_name}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Vehicle</span>
+                  <span className="text-sm font-medium text-black">
+                    {forwardTrip.plate_number}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Departure</span>
+                  <span className="text-sm font-medium text-black">
+                    {forwardTrip.departure_time}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Arrival</span>
+                  <span className="text-sm font-medium text-black">
+                    {forwardTrip.arrival_time}
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Route</span>
-                <span className="text-sm font-medium text-black">
-                  {mockTrips.forward.route}
-                </span>
+              <div className="flex gap-2 mt-4">
+                {forwardTrip.status === "SCHEDULED" && (
+                  <Button
+                    className={`flex-1 bg-primary ${buttonBase}`}
+                    onClick={() => handleStartTrip(forwardTrip.schedule_id)}
+                  >
+                    <Play size={16} className="mr-2" />
+                    Start Trip
+                  </Button>
+                )}
+                {forwardTrip.status === "IN_PROGRESS" && (
+                  <Button
+                    className={`flex-1 bg-primary ${buttonBase}`}
+                    onClick={() => handleCompleteTrip(forwardTrip.schedule_id)}
+                  >
+                    <CheckCircle size={16} className="mr-2" />
+                    Complete Trip
+                  </Button>
+                )}
+                <Button variant="outline" className={buttonBase}>
+                  View Route
+                </Button>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Vehicle</span>
-                <span className="text-sm font-medium text-black">
-                  {mockTrips.forward.vehicle}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Departure</span>
-                <span className="text-sm font-medium text-black">
-                  {mockTrips.forward.departure}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Estimated Arrival</span>
-                <span className="text-sm font-medium text-black">
-                  {mockTrips.forward.arrival}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Passengers</span>
-                <span className="text-sm font-medium text-black">
-                  {mockTrips.forward.passengers}
-                </span>
-              </div>
-            </div>
-            <div className="flex gap-2 mt-4">
-              <Button className={`flex-1 bg-primary ${buttonBase}`}>
-                <Play size={16} className="mr-2" />
-                Start Trip
-              </Button>
-              <Button variant="outline" className={buttonBase}>
-                View Route
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
-        <Card className="border border-gray-200 shadow-sm">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Return Trip</CardTitle>
-            <StatusBadge status={mockTrips.return.status} />
-          </CardHeader>
-          <CardContent>
-            <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Trip ID</span>
-                <span className="text-sm font-medium text-black">
-                  {mockTrips.return.id}
-                </span>
+        {returnTrip && (
+          <Card className="border border-gray-200 shadow-sm">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Return Trip</CardTitle>
+              <StatusBadge status={returnTrip.status} />
+            </CardHeader>
+            <CardContent>
+              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Trip ID</span>
+                  <span className="text-sm font-medium text-black">
+                    {returnTrip.schedule_id}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Route</span>
+                  <span className="text-sm font-medium text-black">
+                    {returnTrip.route_name}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Vehicle</span>
+                  <span className="text-sm font-medium text-black">
+                    {returnTrip.plate_number}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Departure</span>
+                  <span className="text-sm font-medium text-black">
+                    {returnTrip.departure_time}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Arrival</span>
+                  <span className="text-sm font-medium text-black">
+                    {returnTrip.arrival_time}
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Route</span>
-                <span className="text-sm font-medium text-black">
-                  {mockTrips.return.route}
-                </span>
+              <div className="flex gap-2 mt-4">
+                {returnTrip.status === "SCHEDULED" && (
+                  <Button
+                    className={`flex-1 bg-primary ${buttonBase}`}
+                    onClick={() => handleStartTrip(returnTrip.schedule_id)}
+                  >
+                    <Play size={16} className="mr-2" />
+                    Start Trip
+                  </Button>
+                )}
+                {returnTrip.status === "IN_PROGRESS" && (
+                  <Button
+                    className={`flex-1 bg-primary ${buttonBase}`}
+                    onClick={() => handleCompleteTrip(returnTrip.schedule_id)}
+                  >
+                    <CheckCircle size={16} className="mr-2" />
+                    Complete Trip
+                  </Button>
+                )}
+                <Button variant="outline" className={buttonBase}>
+                  View Route
+                </Button>
               </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Vehicle</span>
-                <span className="text-sm font-medium text-black">
-                  {mockTrips.return.vehicle}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Departure</span>
-                <span className="text-sm font-medium text-black">
-                  {mockTrips.return.departure}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Estimated Arrival</span>
-                <span className="text-sm font-medium text-black">
-                  {mockTrips.return.arrival}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-600">Passengers</span>
-                <span className="text-sm font-medium text-black">
-                  {mockTrips.return.passengers}
-                </span>
-              </div>
-            </div>
-            <div className="flex gap-2 mt-4">
-              <Button
-                disabled
-                className={`flex-1 bg-primary ${buttonBase} opacity-50 cursor-not-allowed`}
-              >
-                <Play size={16} className="mr-2" />
-                Start Trip
-              </Button>
-              <Button variant="outline" className={buttonBase}>
-                View Route
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         <Card className="border border-blue-200 shadow-sm border-l-4 border-l-blue-500">
           <CardHeader>
@@ -148,14 +167,18 @@ export default function DriverTrips() {
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
-              {notifications.map((notification, idx) => (
-                <div
-                  key={idx}
-                  className="p-3 bg-blue-50 rounded text-sm text-blue-900"
-                >
-                  • {notification}
-                </div>
-              ))}
+              {notifications.length === 0 ? (
+                <p className="text-sm text-gray-500">No new notifications.</p>
+              ) : (
+                notifications.map((notif) => (
+                  <div
+                    key={notif.notification_id}
+                    className="p-3 bg-blue-50 rounded text-sm text-blue-900"
+                  >
+                    • {notif.message}
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>
