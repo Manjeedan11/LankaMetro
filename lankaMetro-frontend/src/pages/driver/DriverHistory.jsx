@@ -1,57 +1,6 @@
 import StatusBadge from "@/components/standalone/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-const mockHistory = [
-  {
-    id: "H001",
-    route: "R001 - Colombo to Kandy",
-    vehicle: "V001",
-    date: "2024-05-26",
-    status: "COMPLETED",
-  },
-  {
-    id: "H002",
-    route: "R001 - Kandy to Colombo",
-    vehicle: "V001",
-    date: "2024-05-26",
-    status: "COMPLETED",
-  },
-  {
-    id: "H003",
-    route: "R002 - Kandy Loop",
-    vehicle: "V002",
-    date: "2024-05-25",
-    status: "COMPLETED",
-  },
-  {
-    id: "H004",
-    route: "R001 - Colombo to Kandy",
-    vehicle: "V001",
-    date: "2024-05-25",
-    status: "COMPLETED",
-  },
-  {
-    id: "H005",
-    route: "R003 - Galle Connector",
-    vehicle: "V003",
-    date: "2024-05-24",
-    status: "COMPLETED",
-  },
-  {
-    id: "H006",
-    route: "R002 - Kandy Loop",
-    vehicle: "V002",
-    date: "2024-05-24",
-    status: "COMPLETED",
-  },
-  {
-    id: "H007",
-    route: "R001 - Colombo to Kandy",
-    vehicle: "V001",
-    date: "2024-05-23",
-    status: "COMPLETED",
-  },
-];
+import { useGetMyHistoryQuery } from "@/lib/api";
 
 export default function DriverHistory() {
   const totalTrips = mockHistory.length;
