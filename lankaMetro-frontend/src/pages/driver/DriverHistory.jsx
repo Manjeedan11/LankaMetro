@@ -3,6 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useGetMyHistoryQuery } from "@/lib/api";
 
 export default function DriverHistory() {  
+
+  const { data: trips = [], isLoading, isError } = useGetMyHistoryQuery();
+  const totalTrips = trips.length;
+  const completedTrips = trips.filter((t) => t.status === "COMPLETED").length;
+  const completionRate = totalTrips ? ((completedTrips / totalTrips) * 100).toFixed(0) : 0;
   
   if (isLoading) return <div className="p-6">Loading your trip history...</div>;
   if (isError) return <div className="p-6 text-red-600">Error loading history.</div>;
