@@ -12,9 +12,16 @@ import { toast } from "sonner";
 
 
 
-export default function DriverTrips() {
-const buttonBase =
-    "border border-gray-300 text-black hover:bg-red-700 hover:text-white transition-colors";
+export default function DriverTrips() { 
+  const {
+    data: schedules = [],
+    isLoading,
+    refetch: refetchSchedules,
+  } = useGetMySchedulesQuery();
+  const [updateScheduleStatus] = useUpdateScheduleStatusMutation();
+  const { data: notifications = [] } = useGetNotificationsQuery();
+
+  const buttonBase = "border border-gray-300 text-black hover:bg-red-700 hover:text-white transition-colors";
 
   if (isLoading) return <div className="p-6">Loading your trips...</div>;
 
