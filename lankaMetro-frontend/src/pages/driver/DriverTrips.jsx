@@ -21,6 +21,28 @@ export default function DriverTrips() {
   const [updateScheduleStatus] = useUpdateScheduleStatusMutation();
   const { data: notifications = [] } = useGetNotificationsQuery();
 
+  const forwardTrip = schedules[0];
+  const returnTrip = schedules[1];
+
+  const handleStartTrip = async (scheduleId) => {
+    try {
+      await updateScheduleStatus({
+        id: scheduleId,
+        status: "IN_PROGRESS",
+      }).unwrap();
+      toast.success("Trip started. Driver is now ON DUTY.", {
+        icon: "🚌",
+        style: { background: "#dcfce7", color: "#166534" },
+      });
+      refetchSchedules();
+    } catch (err) {
+      toast.error("Failed to start trip.", {
+        icon: "❌",
+        style: { background: "#fee2e2", color: "#b91c1c" },
+      });
+    }
+  };
+
   const buttonBase = "border border-gray-300 text-black hover:bg-red-700 hover:text-white transition-colors";
 
   if (isLoading) return <div className="p-6">Loading your trips...</div>;
