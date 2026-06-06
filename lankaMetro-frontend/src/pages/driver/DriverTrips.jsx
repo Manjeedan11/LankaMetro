@@ -9,9 +9,6 @@ import {
 } from "@/lib/api";
 import { toast } from "sonner";
 
-
-
-
 export default function DriverTrips() { 
   const {
     data: schedules = [],
@@ -37,6 +34,25 @@ export default function DriverTrips() {
       refetchSchedules();
     } catch (err) {
       toast.error("Failed to start trip.", {
+        icon: "❌",
+        style: { background: "#fee2e2", color: "#b91c1c" },
+      });
+    }
+  };
+
+  const handleCompleteTrip = async (scheduleId) => {
+    try {
+      await updateScheduleStatus({
+        id: scheduleId,
+        status: "COMPLETED",
+      }).unwrap();
+      toast.success("Trip completed.", {
+        icon: "✅",
+        style: { background: "#dcfce7", color: "#166534" },
+      });
+      refetchSchedules();
+    } catch (err) {
+      toast.error("Failed to complete trip.", {
         icon: "❌",
         style: { background: "#fee2e2", color: "#b91c1c" },
       });
