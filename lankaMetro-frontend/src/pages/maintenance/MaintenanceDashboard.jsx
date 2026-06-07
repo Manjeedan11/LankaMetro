@@ -5,8 +5,6 @@ import StatusBadge from "@/components/standalone/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useSelector } from "react-redux";
-import {  useGetVehiclesQuery,  useGetMaintenanceRecordsQuery,  useCreateMaintenanceMutation,  useCompleteMaintenanceMutation,} from "@/lib/api";
 import {
   Select,
   SelectContent,
@@ -15,30 +13,43 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-
-
+import ConfirmDialog from "@/components/standalone/ConfirmDialog";
+import {
+  useGetVehiclesQuery,
+  useGetMaintenanceRecordsQuery,
+  useCreateMaintenanceMutation,
+  useCompleteMaintenanceMutation,
+} from "@/lib/api";
 
 export default function MaintenanceDashboard() {
-  
-const { data: vehicles = [] } = useGetVehiclesQuery();  
-const { data: maintenanceRecords = [], refetch } = useGetMaintenanceRecordsQuery();  
-const [createMaintenance] = useCreateMaintenanceMutation();  
-const [completeMaintenance] = useCompleteMaintenanceMutation();
-const [formData, setFormData] = useState({
-    vehicle: "",
+  const { data: vehicles = [] } = useGetVehiclesQuery();
+  const { data: maintenanceRecords = [], refetch } =
+    useGetMaintenanceRecordsQuery();
+  const [createMaintenance] = useCreateMaintenanceMutation();
+  const [completeMaintenance] = useCompleteMaintenanceMutation();
+
+  const [formData, setFormData] = useState({
+    vehicle_id: "",
     type: "",
-    serviceDate: "",
+    service_date: "",
     description: "",
-    status: "PENDING",
+    status: "SCHEDULED",
   });
 
-  const totalVehicles = vehicles.length;
-  const activeVehicles = vehicles.filter(v => v.status === "ACTIVE").length;
-  const inMaintenance = vehicles.filter(v => v.status === "MAINTENANCE").length;
-  const completedServices = maintenanceRecords.filter(m => m.status === "COMPLETED").length;
-  const pendingServices = maintenanceRecords.filter(m => m.status === "PENDING" || m.status === "SCHEDULED").length;
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [pendingCompleteId, setPendingCompleteId] = useState(null);
 
-  
+  const totalVehicles = vehicles.length;
+  const activeVehicles = vehicles.filter((v) => v.status === "ACTIVE").length;
+  const inMaintenance = vehicles.filter(
+    (v) => v.status === "MAINTENANCE"
+  ).length;
+  const completedServices = maintenanceRecords.filter(
+    (m) => m.status === "COMPLETED"
+  ).length;
+  const pendingServices = maintenanceRecords.filter(
+    (m) => m.status === "PENDING" || m.status === "SCHEDULED"
+  ).length;
 
   const handleSelectChange = (name, value) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -49,7 +60,7 @@ const [formData, setFormData] = useState({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
- const handleSubmit = async (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       await createMaintenance(formData).unwrap();
@@ -67,17 +78,22 @@ const [formData, setFormData] = useState({
     }
   };
 
-  const handleComplete = async (id) => {
-    if (window.confirm("Mark this maintenance as completed?")) {
-      try {
-        await completeMaintenance(id).unwrap();
-        refetch();
-      } catch (err) {
-        alert("Failed to complete maintenance");
-      }
-    }
+  const openCompleteDialog = (id) => {
+    setPendingCompleteId(id);
+    setConfirmDialogOpen(true);
   };
 
+  const confirmComplete = async () => {
+    try {
+      await completeMaintenance(pendingCompleteId).unwrap();
+      refetch();
+    } catch (err) {
+      alert("Failed to complete maintenance");
+    } finally {
+      setConfirmDialogOpen(false);
+      setPendingCompleteId(null);
+    }
+  };
 
   const buttonBase =
     "border border-gray-300 text-black hover:bg-red-700 hover:text-white transition-colors";
@@ -116,6 +132,7 @@ const [formData, setFormData] = useState({
         />
       </div>
 
+      {/* Add Maintenance Record Form */}
       <Card className="border border-gray-200 shadow-sm">
         <CardHeader>
           <CardTitle>Add Maintenance Record</CardTitle>
@@ -124,17 +141,25 @@ const [formData, setFormData] = useState({
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Vehicle</label>
+                <label className="block text-sm font-medium mb-2">
+                  Vehicle
+                </label>
                 <Select
                   value={formData.vehicle_id}
-                  onValueChange={(value) => handleSelectChange("vehicle_id", value)}
+                  onValueChange={(value) =>
+                    handleSelectChange("vehicle_id", value)
+                  }
                 >
-                  <SelectTrigger className="w-full text-black">
+                  <SelectTrigger className="w-full bg-white text-black border border-gray-300 rounded-md">
                     <SelectValue placeholder="Select vehicle" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
                     {vehicles.map((v) => (
-                      <SelectItem key={v.vehicle_id} value={v.vehicle_id.toString()}>
+                      <SelectItem
+                        key={v.vehicle_id}
+                        value={v.vehicle_id.toString()}
+                        className="text-black hover:bg-gray-100"
+                      >
                         {v.plate_number} ({v.vehicle_id})
                       </SelectItem>
                     ))}
@@ -142,34 +167,63 @@ const [formData, setFormData] = useState({
                 </Select>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Maintenance Type</label>
+                <label className="block text-sm font-medium mb-2">
+                  Maintenance Type
+                </label>
                 <Select
                   value={formData.type}
                   onValueChange={(value) => handleSelectChange("type", value)}
                 >
-                  <SelectTrigger className="w-full text-black">
+                  <SelectTrigger className="w-full bg-white text-black border border-gray-300 rounded-md">
                     <SelectValue placeholder="Select type" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="OIL_CHANGE">Oil Change</SelectItem>
-                    <SelectItem value="BRAKE_SERVICE">Brake Service</SelectItem>
-                    <SelectItem value="TIRE_REPLACEMENT">Tire Replacement</SelectItem>
-                    <SelectItem value="ENGINE_SERVICE">Engine Service</SelectItem>
-                    <SelectItem value="INSPECTION">Inspection</SelectItem>
+                  <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
+                    <SelectItem
+                      value="OIL_CHANGE"
+                      className="text-black hover:bg-gray-100"
+                    >
+                      Oil Change
+                    </SelectItem>
+                    <SelectItem
+                      value="BRAKE_SERVICE"
+                      className="text-black hover:bg-gray-100"
+                    >
+                      Brake Service
+                    </SelectItem>
+                    <SelectItem
+                      value="ENGINE_REPAIR"
+                      className="text-black hover:bg-gray-100"
+                    >
+                      Engine Repair
+                    </SelectItem>
+                    <SelectItem
+                      value="INSPECTION"
+                      className="text-black hover:bg-gray-100"
+                    >
+                      Inspection
+                    </SelectItem>
+                    <SelectItem
+                      value="OTHER"
+                      className="text-black hover:bg-gray-100"
+                    >
+                      Other
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Service Date</label>
+                <label className="block text-sm font-medium mb-2">
+                  Service Date
+                </label>
                 <Input
                   type="date"
                   name="service_date"
                   value={formData.service_date}
                   onChange={handleInputChange}
                   required
-                  className="text-black"
+                  className="text-black bg-white border border-gray-300 rounded-md"
                 />
               </div>
               <div>
@@ -178,26 +232,43 @@ const [formData, setFormData] = useState({
                   value={formData.status}
                   onValueChange={(value) => handleSelectChange("status", value)}
                 >
-                  <SelectTrigger className="w-full text-black">
+                  <SelectTrigger className="w-full bg-white text-black border border-gray-300 rounded-md">
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="SCHEDULED">SCHEDULED</SelectItem>
-                    <SelectItem value="IN_PROGRESS">IN_PROGRESS</SelectItem>
-                    <SelectItem value="COMPLETED">COMPLETED</SelectItem>
+                  <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
+                    <SelectItem
+                      value="SCHEDULED"
+                      className="text-black hover:bg-gray-100"
+                    >
+                      SCHEDULED
+                    </SelectItem>
+                    <SelectItem
+                      value="IN_PROGRESS"
+                      className="text-black hover:bg-gray-100"
+                    >
+                      IN_PROGRESS
+                    </SelectItem>
+                    <SelectItem
+                      value="COMPLETED"
+                      className="text-black hover:bg-gray-100"
+                    >
+                      COMPLETED
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium mb-2">Description</label>
+              <label className="block text-sm font-medium mb-2">
+                Description
+              </label>
               <Textarea
                 name="description"
                 value={formData.description}
                 onChange={handleInputChange}
                 rows={3}
                 placeholder="Maintenance details..."
-                className="text-black"
+                className="text-black bg-white border border-gray-300 rounded-md"
               />
             </div>
             <Button type="submit" className={`bg-primary ${buttonBase}`}>
@@ -207,6 +278,7 @@ const [formData, setFormData] = useState({
         </CardContent>
       </Card>
 
+      {/* Recent Maintenance Table */}
       <Card className="border border-gray-200 shadow-sm">
         <CardHeader>
           <CardTitle>Recent Maintenance</CardTitle>
@@ -216,29 +288,48 @@ const [formData, setFormData] = useState({
             <table className="w-full">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Vehicle</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Maintenance Type</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Date</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Status</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Action</th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                    Vehicle
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                    Type
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                    Date
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                    Status
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                    Action
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {maintenanceRecords.map((item) => (
-                  <tr key={item.maintenance_id} className="border-b border-gray-100 hover:bg-gray-50">
+                  <tr
+                    key={item.maintenance_id}
+                    className="border-b border-gray-100 hover:bg-gray-50"
+                  >
                     <td className="py-3 px-4 text-sm font-medium text-black">
                       {item.plate_number || item.vehicle_id}
                     </td>
-                    <td className="py-3 px-4 text-sm text-black">{item.type.replace(/_/g, " ")}</td>
-                    <td className="py-3 px-4 text-sm text-black">{item.service_date}</td>
+                    <td className="py-3 px-4 text-sm text-black">
+                      {item.type?.replace(/_/g, " ")}
+                    </td>
+                    <td className="py-3 px-4 text-sm text-black">
+                      {item.service_date}
+                    </td>
                     <td className="py-3 px-4 text-sm">
                       <StatusBadge status={item.status} />
                     </td>
                     <td className="py-3 px-4 text-sm">
                       {item.status === "IN_PROGRESS" && (
                         <button
-                          onClick={() => handleComplete(item.maintenance_id)}
-                          className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded hover:bg-green-200"
+                          onClick={() =>
+                            openCompleteDialog(item.maintenance_id)
+                          }
+                          className="px-3 py-1 text-xs font-medium border border-gray-300 text-black rounded-md hover:bg-red-700 hover:text-white transition-colors"
                         >
                           Complete
                         </button>
@@ -251,6 +342,16 @@ const [formData, setFormData] = useState({
           </div>
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={confirmDialogOpen}
+        onOpenChange={setConfirmDialogOpen}
+        onConfirm={confirmComplete}
+        title="Complete Maintenance"
+        description="Are you sure you want to mark this maintenance as completed? This action will reactivate the vehicle."
+        confirmText="Complete"
+        cancelText="Cancel"
+      />
     </div>
   );
 }
