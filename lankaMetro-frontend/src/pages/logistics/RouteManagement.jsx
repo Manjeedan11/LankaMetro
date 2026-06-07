@@ -23,6 +23,12 @@ import {
   useAddStopToRouteMutation,
   useRemoveStopFromRouteMutation,
 } from "@/lib/api";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 export default function RouteManagement() {
   const {
@@ -455,6 +461,9 @@ export default function RouteManagement() {
                     Destination
                   </th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                    Sub Routes
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
                     Availability
                   </th>
                   <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
@@ -485,6 +494,29 @@ export default function RouteManagement() {
                     </td>
                     <td className="py-3 px-4 text-sm text-black">
                       {route.destination}
+                    </td>
+                    <td className="py-3 px-4 text-sm">
+                      {route.subroute_info ? (
+                        <Accordion type="single" collapsible className="w-full">
+                          <AccordionItem
+                            value="subroute-info"
+                            className="border-0"
+                          >
+                            <AccordionTrigger className="py-1 text-sm hover:no-underline">
+                              <span className="truncate max-w-[200px] text-left">
+                                {route.subroute_info.length > 50
+                                  ? route.subroute_info.substring(0, 50) + "..."
+                                  : route.subroute_info}
+                              </span>
+                            </AccordionTrigger>
+                            <AccordionContent className="text-sm text-gray-600 pb-1">
+                              {route.subroute_info}
+                            </AccordionContent>
+                          </AccordionItem>
+                        </Accordion>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
                     </td>
                     <td className="py-3 px-4 text-sm">
                       <StatusBadge status={route.availability} />
