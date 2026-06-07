@@ -1,6 +1,7 @@
 import { BusFront, Users, AlertTriangle, TrendingUp } from "lucide-react";
 import StatCard from "@/components/standalone/StatCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import {
   useGetVehiclesQuery,
   useGetDriversQuery,
@@ -24,19 +25,6 @@ export default function DepotSupervisorDashboard() {
   const alerts = maintenanceRecords.filter(
     (m) => m.status === "PENDING"
   ).length;
-
-  const fleetSummary = vehicles.slice(0, 3).map((v) => ({
-    vehicle: v.plate_number,
-    status: v.status,
-    route: "N/A",
-    trips: 0,
-  }));
-
-  const driverSummary = drivers.slice(0, 3).map((d) => ({
-    name: d.full_name,
-    available: d.availability === "AVAILABLE",
-    route: "N/A",
-  }));
 
   const activeTripsList = schedules
     .filter((s) => s.status === "IN_PROGRESS")
@@ -94,80 +82,90 @@ export default function DepotSupervisorDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Fleet Summary - Scrollable */}
         <Card className="border border-gray-200 shadow-sm">
           <CardHeader>
             <CardTitle>Fleet Summary</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {fleetSummary.length === 0 ? (
-                <p className="text-sm text-gray-500">No vehicles found.</p>
-              ) : (
-                fleetSummary.map((vehicle, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded"
-                  >
-                    <div>
-                      <p className="font-medium text-sm text-black">
-                        {vehicle.vehicle}
-                      </p>
-                      <p className="text-xs text-gray-600">{vehicle.route}</p>
+            <ScrollArea className="h-[240px]">
+              <div className="space-y-3">
+                {vehicles.length === 0 ? (
+                  <p className="text-sm text-gray-500">No vehicles found.</p>
+                ) : (
+                  vehicles.map((vehicle) => (
+                    <div
+                      key={vehicle.vehicle_id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded"
+                    >
+                      <div>
+                        <p className="font-medium text-sm text-black">
+                          {vehicle.plate_number}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          Assigned route: N/A
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span
+                          className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
+                            vehicle.status === "ACTIVE"
+                              ? "bg-green-100 text-green-800"
+                              : "bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          {vehicle.status}
+                        </span>
+                        <p className="text-xs text-gray-600 mt-1">Trips: 0</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span
-                        className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
-                          vehicle.status === "ACTIVE"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-blue-100 text-blue-800"
-                        }`}
-                      >
-                        {vehicle.status}
-                      </span>
-                      <p className="text-xs text-gray-600 mt-1">
-                        {vehicle.trips} trips
-                      </p>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+                  ))
+                )}
+              </div>
+              <ScrollBar orientation="vertical" />
+            </ScrollArea>
           </CardContent>
         </Card>
 
+        {/* Driver Availability - Scrollable */}
         <Card className="border border-gray-200 shadow-sm">
           <CardHeader>
             <CardTitle>Driver Availability</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {driverSummary.length === 0 ? (
-                <p className="text-sm text-gray-500">No drivers found.</p>
-              ) : (
-                driverSummary.map((driver, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded"
-                  >
-                    <div>
-                      <p className="font-medium text-sm text-black">
-                        {driver.name}
-                      </p>
-                      <p className="text-xs text-gray-600">{driver.route}</p>
-                    </div>
-                    <span
-                      className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
-                        driver.available
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
+            <ScrollArea className="h-[240px]">
+              <div className="space-y-3">
+                {drivers.length === 0 ? (
+                  <p className="text-sm text-gray-500">No drivers found.</p>
+                ) : (
+                  drivers.map((driver) => (
+                    <div
+                      key={driver.driver_id}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded"
                     >
-                      {driver.available ? "Available" : "Unavailable"}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
+                      <div>
+                        <p className="font-medium text-sm text-black">
+                          {driver.full_name}
+                        </p>
+                        <p className="text-xs text-gray-600">Route: N/A</p>
+                      </div>
+                      <span
+                        className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
+                          driver.availability === "AVAILABLE"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {driver.availability === "AVAILABLE"
+                          ? "Available"
+                          : "Unavailable"}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+              <ScrollBar orientation="vertical" />
+            </ScrollArea>
           </CardContent>
         </Card>
       </div>
@@ -210,25 +208,6 @@ export default function DepotSupervisorDashboard() {
                 </div>
               ))}
             </div>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="border border-yellow-200 bg-yellow-50 border-l-4 border-l-yellow-500 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-yellow-900">Recent Alerts</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {alertMessages.length === 0 ? (
-            <p className="text-sm text-yellow-900">No pending alerts.</p>
-          ) : (
-            <ul className="space-y-2">
-              {alertMessages.map((msg, idx) => (
-                <li key={idx} className="text-sm text-yellow-900">
-                  {msg}
-                </li>
-              ))}
-            </ul>
           )}
         </CardContent>
       </Card>
