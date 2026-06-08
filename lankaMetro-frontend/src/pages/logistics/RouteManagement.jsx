@@ -197,279 +197,260 @@ export default function RouteManagement() {
   if (isError) return <div>Error loading routes</div>;
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
-      <div className="page-header">
+    <div className="container mx-auto px-4 py-6 max-w-7xl space-y-4">
+      <div>
         <h1 className="page-title">Route Management</h1>
         <p className="page-description">Create and manage transport routes</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Button
-            onClick={() => {
-              setEditingId(null);
-              setFormData({
-                route_no: "",
-                route_name: "",
-                start_point: "",
-                destination: "",
-                distance_txt: "",
-                subroute_info: "",
-                availability: "ACTIVE",
-              });
-              setRouteStops([]);
-              setShowForm(!showForm);
-            }}
-            className={`mb-6 bg-primary ${buttonBase}`}
-          >
-            <Plus size={20} />
-            Add Route
-          </Button>
+      <Button
+        onClick={() => {
+          setEditingId(null);
+          setFormData({
+            route_no: "",
+            route_name: "",
+            start_point: "",
+            destination: "",
+            distance_txt: "",
+            subroute_info: "",
+            availability: "ACTIVE",
+          });
+          setRouteStops([]);
+          setShowForm(!showForm);
+        }}
+        className={`bg-primary ${buttonBase}`}
+      >
+        <Plus size={20} />
+        Add Route
+      </Button>
 
-          {showForm && (
-            <Card className="mb-6 border border-gray-200 shadow-sm overflow-visible">
-              <CardHeader>
-                <CardTitle>
-                  {editingId ? "Edit Route" : "Create New Route"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Route Number
-                    </label>
-                    <Input
-                      type="text"
-                      name="route_no"
-                      value={formData.route_no}
-                      onChange={handleInputChange}
-                      placeholder="e.g., R101"
-                      required
-                      className="text-black"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Route Name
-                    </label>
-                    <Input
-                      type="text"
-                      name="route_name"
-                      value={formData.route_name}
-                      onChange={handleInputChange}
-                      placeholder="Enter route name"
-                      required
-                      className="text-black"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Start Point
-                      </label>
-                      <Input
-                        type="text"
-                        name="start_point"
-                        value={formData.start_point}
-                        onChange={handleInputChange}
-                        placeholder="Start point"
-                        required
-                        className="text-black"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        End Point
-                      </label>
-                      <Input
-                        type="text"
-                        name="destination"
-                        value={formData.destination}
-                        onChange={handleInputChange}
-                        placeholder="Destination"
-                        required
-                        className="text-black"
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Distance
-                    </label>
-                    <Input
-                      type="text"
-                      name="distance_txt"
-                      value={formData.distance_txt}
-                      onChange={handleInputChange}
-                      placeholder="e.g., 115 km"
-                      required
-                      className="text-black"
-                    />
-                  </div>
+      {showForm && (
+        <Card className="border border-gray-200 shadow-sm max-w-2xl overflow-visible bg-white">
+          <CardHeader className="bg-white">
+            <CardTitle>
+              {editingId ? "Edit Route" : "Create New Route"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="bg-white">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Route Number
+                </label>
+                <Input
+                  type="text"
+                  name="route_no"
+                  value={formData.route_no}
+                  onChange={handleInputChange}
+                  placeholder="e.g., R101"
+                  required
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Route Name
+                </label>
+                <Input
+                  type="text"
+                  name="route_name"
+                  value={formData.route_name}
+                  onChange={handleInputChange}
+                  placeholder="Enter route name"
+                  required
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Start Point
+                </label>
+                <Input
+                  type="text"
+                  name="start_point"
+                  value={formData.start_point}
+                  onChange={handleInputChange}
+                  placeholder="Start point"
+                  required
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  End Point
+                </label>
+                <Input
+                  type="text"
+                  name="destination"
+                  value={formData.destination}
+                  onChange={handleInputChange}
+                  placeholder="Destination"
+                  required
+                  className="w-full"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Distance
+                </label>
+                <Input
+                  type="text"
+                  name="distance_txt"
+                  value={formData.distance_txt}
+                  onChange={handleInputChange}
+                  placeholder="e.g., 115 km"
+                  required
+                  className="w-full"
+                />
+              </div>
 
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <label className="block text-sm font-medium">
-                        Route Stops (in order)
-                      </label>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium">
+                    Route Stops (in order)
+                  </label>
+                  <Button
+                    type="button"
+                    variant="link"
+                    onClick={handleAddStopRow}
+                    className="text-xs text-primary hover:underline font-medium"
+                  >
+                    + Add Stop
+                  </Button>
+                </div>
+                {routeStops.length === 0 && (
+                  <p className="text-sm text-gray-500">
+                    No stops added. Click "Add Stop" to select stops.
+                  </p>
+                )}
+                <div className="space-y-2">
+                  {routeStops.map((stop, index) => (
+                    <div key={index} className="flex gap-2 items-center">
+                      <span className="text-sm font-medium w-8">
+                        {stop.stop_order}.
+                      </span>
+                      <Select
+                        value={stop.stop_id.toString()}
+                        onValueChange={(value) =>
+                          handleStopSelect(index, value)
+                        }
+                      >
+                        <SelectTrigger className="flex-1 bg-white">
+                          <SelectValue placeholder="Select a stop" />
+                        </SelectTrigger>
+                        <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
+                          {allStops.map((s) => (
+                            <SelectItem
+                              key={s.stop_id}
+                              value={s.stop_id.toString()}
+                              className="text-black hover:bg-gray-100"
+                            >
+                              {s.stop_name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <Button
                         type="button"
-                        variant="link"
-                        onClick={handleAddStopRow}
-                        className="text-xs text-primary hover:underline font-medium"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleRemoveStopRow(index)}
+                        className="text-red-500 hover:text-red-700"
                       >
-                        + Add Stop
+                        <Trash2 size={16} />
                       </Button>
                     </div>
-                    {routeStops.length === 0 && (
-                      <p className="text-sm text-gray-500">
-                        No stops added. Click "Add Stop" to select stops.
-                      </p>
-                    )}
-                    <div className="space-y-2">
-                      {routeStops.map((stop, index) => (
-                        <div key={index} className="flex gap-2 items-center">
-                          <span className="text-sm font-medium w-8">
-                            {stop.stop_order}.
-                          </span>
-                          <Select
-                            value={stop.stop_id.toString()}
-                            onValueChange={(value) =>
-                              handleStopSelect(index, value)
-                            }
-                          >
-                            <SelectTrigger className="flex-1 bg-white">
-                              <SelectValue placeholder="Select a stop" />
-                            </SelectTrigger>
-                            <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
-                              {allStops.map((s) => (
-                                <SelectItem
-                                  key={s.stop_id}
-                                  value={s.stop_id.toString()}
-                                  className="text-black hover:bg-gray-100"
-                                >
-                                  {s.stop_name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleRemoveStopRow(index)}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <Trash2 size={16} />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+                  ))}
+                </div>
+              </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Sub Routes
-                    </label>
-                    <Input
-                      type="text"
-                      name="subroute_info"
-                      value={formData.subroute_info}
-                      onChange={handleInputChange}
-                      placeholder="e.g., Route A, Route B"
-                      className="text-black"
-                    />
-                  </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Sub Routes
+                </label>
+                <Input
+                  type="text"
+                  name="subroute_info"
+                  value={formData.subroute_info}
+                  onChange={handleInputChange}
+                  placeholder="e.g., Route A, Route B"
+                  className="w-full"
+                />
+              </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Availability
-                    </label>
-                    <Select
-                      onValueChange={handleAvailabilityChange}
-                      value={formData.availability}
-                    >
-                      <SelectTrigger className="w-full text-black">
-                        <SelectValue placeholder="Select availability" />
-                      </SelectTrigger>
-                      <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
-                        <SelectItem
-                          value="ACTIVE"
-                          className="text-black hover:bg-gray-100"
-                        >
-                          ACTIVE
-                        </SelectItem>
-                        <SelectItem
-                          value="INACTIVE"
-                          className="text-black hover:bg-gray-100"
-                        >
-                          INACTIVE
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Availability
+                </label>
+                <Select
+                  onValueChange={handleAvailabilityChange}
+                  value={formData.availability}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select availability" />
+                  </SelectTrigger>
+                  <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
+                    <SelectItem value="ACTIVE">ACTIVE</SelectItem>
+                    <SelectItem value="INACTIVE">INACTIVE</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                  <div className="flex gap-2">
-                    <Button
-                      type="submit"
-                      className={`bg-primary ${buttonBase}`}
-                    >
-                      {editingId ? "Update Route" : "Save Route"}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => {
-                        setShowForm(false);
-                        setEditingId(null);
-                      }}
-                      className={buttonBase}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
+              <div className="flex gap-2">
+                <Button type="submit" className={`bg-primary ${buttonBase}`}>
+                  {editingId ? "Update Route" : "Save Route"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowForm(false);
+                    setEditingId(null);
+                  }}
+                  className={buttonBase}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
-      <Card className="border border-gray-200 shadow-sm">
-        <CardHeader>
+      <Card className="border border-gray-200 shadow-sm bg-white">
+        <CardHeader className="bg-white">
           <CardTitle>All Routes</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+        <CardContent className="bg-white p-0">
+          <div className="overflow-x-auto bg-white">
+            <table className="w-full bg-white">
+              <thead className="bg-white">
+                <tr className="border-b border-gray-200 bg-white">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Route ID
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Route No
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Route Name
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Start
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Destination
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Sub Routes
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Availability
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Map Preview
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Actions
                   </th>
                 </tr>
@@ -478,24 +459,24 @@ export default function RouteManagement() {
                 {routes.map((route) => (
                   <tr
                     key={route.route_id}
-                    className="border-b border-gray-100 hover:bg-gray-50"
+                    className="border-b border-gray-100 hover:bg-gray-50 bg-white"
                   >
-                    <td className="py-3 px-4 text-sm font-medium text-black">
+                    <td className="py-3 px-4 text-sm font-medium text-black bg-white">
                       {route.route_id}
                     </td>
-                    <td className="py-3 px-4 text-sm text-black">
+                    <td className="py-3 px-4 text-sm text-black bg-white">
                       {route.route_no}
                     </td>
-                    <td className="py-3 px-4 text-sm text-black">
+                    <td className="py-3 px-4 text-sm text-black bg-white">
                       {route.route_name}
                     </td>
-                    <td className="py-3 px-4 text-sm text-black">
+                    <td className="py-3 px-4 text-sm text-black bg-white">
                       {route.start_point}
                     </td>
-                    <td className="py-3 px-4 text-sm text-black">
+                    <td className="py-3 px-4 text-sm text-black bg-white">
                       {route.destination}
                     </td>
-                    <td className="py-3 px-4 text-sm">
+                    <td className="py-3 px-4 text-sm bg-white">
                       {route.subroute_info ? (
                         <Accordion type="single" collapsible className="w-full">
                           <AccordionItem
@@ -518,10 +499,10 @@ export default function RouteManagement() {
                         <span className="text-gray-400">—</span>
                       )}
                     </td>
-                    <td className="py-3 px-4 text-sm">
+                    <td className="py-3 px-4 text-sm bg-white">
                       <StatusBadge status={route.availability} />
                     </td>
-                    <td className="py-3 px-4 text-sm">
+                    <td className="py-3 px-4 text-sm bg-white">
                       <button
                         onClick={() => setMapRouteId(route.route_id)}
                         className="p-1.5 hover:bg-gray-200 rounded text-blue-600"
@@ -530,7 +511,7 @@ export default function RouteManagement() {
                         <MapPin size={16} />
                       </button>
                     </td>
-                    <td className="py-3 px-4 text-sm">
+                    <td className="py-3 px-4 text-sm bg-white">
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleEdit(route)}

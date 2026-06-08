@@ -1,11 +1,28 @@
-import { useGetVehiclesQuery, useGetSchedulesQuery } from "@/lib/api";
+import { useState } from "react";
+import {
+  useGetVehiclesQuery,
+  useGetSchedulesQuery,
+  useRequestSuddenTripMutation,
+} from "@/lib/api";
 import StatusBadge from "@/components/standalone/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import ConfirmDialog from "@/components/standalone/ConfirmDialog";
+import { toast } from "sonner";
 
 export default function Fleet() {
-  const { data: vehicles = [], isLoading, isError } = useGetVehiclesQuery();
+  const {
+    data: vehicles = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useGetVehiclesQuery();
   const today = new Date().toISOString().split("T")[0];
   const { data: schedules = [] } = useGetSchedulesQuery(today);
+  const [requestSuddenTrip] = useRequestSuddenTripMutation();
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedVehicleId, setSelectedVehicleId] = useState(null);
+  const [selectedVehiclePlate, setSelectedVehiclePlate] = useState("");
 
   const totalVehicles = vehicles.length;
   const availableVehicles = vehicles.filter(
@@ -22,6 +39,35 @@ export default function Fleet() {
   const utilization = totalVehicles
     ? ((vehiclesWithSchedules / totalVehicles) * 100).toFixed(0)
     : 0;
+
+  const handleRequestTrip = async () => {
+    try {
+      await requestSuddenTrip(selectedVehicleId).unwrap();
+      toast.success(
+        `Sudden trip request sent for vehicle ${selectedVehiclePlate}. Logistics officer notified.`,
+        {
+          icon: "🚨",
+          style: { background: "#dcfce7", color: "#166534" },
+        }
+      );
+      refetch();
+    } catch (err) {
+      toast.error(err?.data?.message || "Failed to request sudden trip", {
+        icon: "❌",
+        style: { background: "#fee2e2", color: "#b91c1c" },
+      });
+    } finally {
+      setDialogOpen(false);
+      setSelectedVehicleId(null);
+      setSelectedVehiclePlate("");
+    }
+  };
+
+  const openDialog = (vehicleId, plateNumber) => {
+    setSelectedVehicleId(vehicleId);
+    setSelectedVehiclePlate(plateNumber);
+    setDialogOpen(true);
+  };
 
   if (isLoading)
     return (
@@ -105,6 +151,9 @@ export default function Fleet() {
                   <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
                     Today's Trips
                   </th>
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                    Action
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -112,7 +161,6 @@ export default function Fleet() {
                   const todaysTrips = schedules.filter(
                     (s) => s.vehicle_id === vehicle.vehicle_id
                   ).length;
-                  // Assigned route – we would need to get from schedule; optional
                   const assignedRoute = "—";
                   return (
                     <tr
@@ -137,6 +185,28 @@ export default function Fleet() {
                       <td className="py-3 px-4 text-sm text-black">
                         {todaysTrips}
                       </td>
+                      <td className="py-3 px-4 text-sm">
+                        {vehicle.status === "ACTIVE" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              openDialog(
+                                vehicle.vehicle_id,
+                                vehicle.plate_number
+                              )
+                            }
+                            className="border border-gray-300 text-black hover:bg-red-700 hover:text-white"
+                          >
+                            Request Trip
+                          </Button>
+                        )}
+                        {vehicle.status === "PENDING" && (
+                          <span className="text-xs text-yellow-600 font-medium bg-yellow-50 px-2 py-1 rounded">
+                            Pending assignment
+                          </span>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
@@ -145,6 +215,16 @@ export default function Fleet() {
           </div>
         </CardContent>
       </Card>
+
+      <ConfirmDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onConfirm={handleRequestTrip}
+        title="Request Sudden Trip"
+        description={`This will notify the logistics officer to assign a trip for vehicle ${selectedVehiclePlate}. Do you want to proceed?`}
+        confirmText="Yes, Request"
+        cancelText="Cancel"
+      />
     </div>
   );
 }

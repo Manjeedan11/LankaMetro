@@ -137,6 +137,13 @@ export const Api = createApi({
         `vehicles/available?date=${date}&start=${start}&end=${end}`,
       providesTags: ["Vehicle"],
     }),
+    requestSuddenTrip: builder.mutation({
+      query: (id) => ({
+        url: `vehicles/${id}/request-sudden-trip`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["Vehicle", "Notification"],
+    }),
 
     // ========== ROUTES ==========
     getRoutes: builder.query({
@@ -460,6 +467,7 @@ export const {
   useUpdateVehicleMutation,
   useDeleteVehicleMutation,
   useGetAvailableVehiclesQuery,
+  useRequestSuddenTripMutation,
 
   useGetRoutesQuery,
   useGetRouteByIdQuery,

@@ -87,14 +87,14 @@ export default function Reports() {
         </p>
       </div>
 
-      <Card className="border border-gray-200 shadow-sm">
-        <CardHeader>
+      <Card className="border border-gray-200 shadow-sm bg-white">
+        <CardHeader className="bg-white">
           <CardTitle className="flex items-center gap-2 text-lg font-semibold">
             <Filter size={20} />
             Report Filters
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="bg-white">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -151,32 +151,32 @@ export default function Reports() {
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="border border-gray-200 shadow-sm">
-          <CardContent className="p-4">
+        <Card className="border border-gray-200 shadow-sm bg-white">
+          <CardContent className="p-4 bg-white">
             <p className="text-xs font-medium text-gray-600">Total Routes</p>
             <p className="text-2xl font-bold text-gray-900 mt-1">
               {totalRoutes}
             </p>
           </CardContent>
         </Card>
-        <Card className="border border-gray-200 shadow-sm">
-          <CardContent className="p-4">
+        <Card className="border border-gray-200 shadow-sm bg-white">
+          <CardContent className="p-4 bg-white">
             <p className="text-xs font-medium text-gray-600">Total Trips</p>
             <p className="text-2xl font-bold text-gray-900 mt-1">
               {totalTrips}
             </p>
           </CardContent>
         </Card>
-        <Card className="border border-gray-200 shadow-sm">
-          <CardContent className="p-4">
+        <Card className="border border-gray-200 shadow-sm bg-white">
+          <CardContent className="p-4 bg-white">
             <p className="text-xs font-medium text-gray-600">Avg Completion</p>
             <p className="text-2xl font-bold text-green-600 mt-1">
               {avgCompletion.toFixed(1)}%
             </p>
           </CardContent>
         </Card>
-        <Card className="border border-gray-200 shadow-sm">
-          <CardContent className="p-4">
+        <Card className="border border-gray-200 shadow-sm bg-white">
+          <CardContent className="p-4 bg-white">
             <p className="text-xs font-medium text-gray-600">Active Vehicles</p>
             <p className="text-2xl font-bold text-gray-900 mt-1">
               {activeVehicles}
@@ -185,22 +185,22 @@ export default function Reports() {
         </Card>
       </div>
 
-      <Card className="border border-gray-200 shadow-sm">
-        <CardHeader>
+      <Card className="border border-gray-200 shadow-sm bg-white">
+        <CardHeader className="bg-white">
           <CardTitle>Route Performance Summary</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+        <CardContent className="bg-white p-0">
+          <div className="overflow-x-auto bg-white">
+            <table className="w-full bg-white">
+              <thead className="bg-white">
+                <tr className="border-b border-gray-200 bg-white">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Route
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Trips
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Completion Rate
                   </th>
                 </tr>
@@ -208,7 +208,10 @@ export default function Reports() {
               <tbody>
                 {summaryLoading ? (
                   <tr>
-                    <td colSpan="3" className="text-center py-6 text-gray-500">
+                    <td
+                      colSpan="3"
+                      className="text-center py-6 text-gray-500 bg-white"
+                    >
                       Loading...
                     </td>
                   </tr>
@@ -228,15 +231,15 @@ export default function Reports() {
                     return (
                       <tr
                         key={route.route_id}
-                        className="border-b border-gray-100 hover:bg-gray-50"
+                        className="border-b border-gray-100 hover:bg-gray-50 bg-white"
                       >
-                        <td className="py-3 px-4 text-sm font-medium text-black">
+                        <td className="py-3 px-4 text-sm font-medium text-black bg-white">
                           {route.route_name}
                         </td>
-                        <td className="py-3 px-4 text-sm text-black">
+                        <td className="py-3 px-4 text-sm text-black bg-white">
                           {routeTrips}
                         </td>
-                        <td className="py-3 px-4 text-sm">
+                        <td className="py-3 px-4 text-sm bg-white">
                           <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
                             {completionRate}%
                           </span>

@@ -83,13 +83,13 @@ export default function LogisticsDashboard() {
         />
       </div>
 
-      <Card className="border border-gray-200 shadow-sm">
-        <CardHeader>
+      <Card className="border border-gray-200 shadow-sm bg-white">
+        <CardHeader className="bg-white">
           <CardTitle className="text-lg font-semibold">
             Bus Stop Locations
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="bg-white">
           {stopsWithCoords.length === 0 ? (
             <div className="bg-gray-100 h-80 rounded-lg flex items-center justify-center text-gray-500">
               No stop coordinates available to display on map.
@@ -125,30 +125,30 @@ export default function LogisticsDashboard() {
         </CardContent>
       </Card>
 
-      <Card className="border border-gray-200 shadow-sm">
-        <CardHeader>
+      <Card className="border border-gray-200 shadow-sm bg-white">
+        <CardHeader className="bg-white">
           <CardTitle className="text-lg font-semibold">
             Today's Schedules
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+        <CardContent className="bg-white p-0">
+          <div className="overflow-x-auto bg-white">
+            <table className="w-full bg-white">
+              <thead className="bg-white">
+                <tr className="border-b border-gray-200 bg-white">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Route
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Driver
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Vehicle
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Departure
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Status
                   </th>
                 </tr>
@@ -156,7 +156,10 @@ export default function LogisticsDashboard() {
               <tbody>
                 {schedules.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="text-center py-6 text-gray-500">
+                    <td
+                      colSpan="5"
+                      className="text-center py-6 text-gray-500 bg-white"
+                    >
                       No schedules for today.
                     </td>
                   </tr>
@@ -164,21 +167,21 @@ export default function LogisticsDashboard() {
                   schedules.map((schedule) => (
                     <tr
                       key={schedule.schedule_id}
-                      className="border-b border-gray-100 hover:bg-gray-50"
+                      className="border-b border-gray-100 hover:bg-gray-50 bg-white"
                     >
-                      <td className="py-3 px-4 text-sm text-black">
+                      <td className="py-3 px-4 text-sm text-black bg-white">
                         {schedule.route_name || "N/A"}
                       </td>
-                      <td className="py-3 px-4 text-sm text-black">
+                      <td className="py-3 px-4 text-sm text-black bg-white">
                         {schedule.driver_name || "N/A"}
                       </td>
-                      <td className="py-3 px-4 text-sm text-black">
+                      <td className="py-3 px-4 text-sm text-black bg-white">
                         {schedule.plate_number || "N/A"}
                       </td>
-                      <td className="py-3 px-4 text-sm text-black">
+                      <td className="py-3 px-4 text-sm text-black bg-white">
                         {schedule.departure_time}
                       </td>
-                      <td className="py-3 px-4 text-sm">
+                      <td className="py-3 px-4 text-sm bg-white">
                         <StatusBadge status={schedule.status} />
                       </td>
                     </tr>

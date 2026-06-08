@@ -1,5 +1,6 @@
 import notificationRepository from "../infrastructure/repository/Notification.js";
 import pool from "../infrastructure/db.js";
+import NotFoundError from "../domain/errors/not-found-error.js";
 
 async function getDriverIdByUserId(userId) {
   const result = await pool.query(
@@ -14,14 +15,17 @@ export const getNotifications = async (req, res, next) => {
     const userId = req.user.userId;
     const role = req.user.role;
     let notifications = [];
+
     if (role === "driver") {
       const driverId = await getDriverIdByUserId(userId);
       if (driverId) {
         notifications = await notificationRepository.findByDriverId(driverId);
       }
     } else {
-      // For non‑drivers, you could implement `findByUserId` if needed
+      // Admin, logistics_officer, depot_supervisor, etc.
+      notifications = await notificationRepository.findByUserId(userId);
     }
+
     res.status(200).json(notifications);
   } catch (err) {
     next(err);

@@ -14,11 +14,12 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import ConfirmDialog from "@/components/standalone/ConfirmDialog";
+import DatePicker from "@/components/standalone/DatePicker";
 import {
   useGetVehiclesQuery,
   useGetMaintenanceRecordsQuery,
   useCreateMaintenanceMutation,
-  useCompleteMaintenanceMutation,
+  useUpdateMaintenanceMutation,
 } from "@/lib/api";
 
 export default function MaintenanceDashboard() {
@@ -26,7 +27,7 @@ export default function MaintenanceDashboard() {
   const { data: maintenanceRecords = [], refetch } =
     useGetMaintenanceRecordsQuery();
   const [createMaintenance] = useCreateMaintenanceMutation();
-  const [completeMaintenance] = useCompleteMaintenanceMutation();
+  const [updateMaintenance] = useUpdateMaintenanceMutation();
 
   const [formData, setFormData] = useState({
     vehicle_id: "",
@@ -37,7 +38,7 @@ export default function MaintenanceDashboard() {
   });
 
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [pendingCompleteId, setPendingCompleteId] = useState(null);
+  const [pendingAction, setPendingAction] = useState(null);
 
   const totalVehicles = vehicles.length;
   const activeVehicles = vehicles.filter((v) => v.status === "ACTIVE").length;
@@ -48,7 +49,10 @@ export default function MaintenanceDashboard() {
     (m) => m.status === "COMPLETED"
   ).length;
   const pendingServices = maintenanceRecords.filter(
-    (m) => m.status === "PENDING" || m.status === "SCHEDULED"
+    (m) =>
+      m.status === "PENDING" ||
+      m.status === "SCHEDULED" ||
+      m.status === "IN_PROGRESS"
   ).length;
 
   const handleSelectChange = (name, value) => {
@@ -78,20 +82,24 @@ export default function MaintenanceDashboard() {
     }
   };
 
-  const openCompleteDialog = (id) => {
-    setPendingCompleteId(id);
+  const openActionDialog = (id, newStatus, actionLabel) => {
+    setPendingAction({ id, newStatus, actionLabel });
     setConfirmDialogOpen(true);
   };
 
-  const confirmComplete = async () => {
+  const confirmAction = async () => {
+    if (!pendingAction) return;
     try {
-      await completeMaintenance(pendingCompleteId).unwrap();
+      await updateMaintenance({
+        id: pendingAction.id,
+        status: pendingAction.newStatus,
+      }).unwrap();
       refetch();
     } catch (err) {
-      alert("Failed to complete maintenance");
+      alert(`Failed to ${pendingAction.actionLabel.toLowerCase()} maintenance`);
     } finally {
       setConfirmDialogOpen(false);
-      setPendingCompleteId(null);
+      setPendingAction(null);
     }
   };
 
@@ -105,6 +113,7 @@ export default function MaintenanceDashboard() {
         <p className="page-description">Track vehicle maintenance schedules</p>
       </div>
 
+      {/* Stats Cards – remain in a grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="In Maintenance"
@@ -132,132 +141,88 @@ export default function MaintenanceDashboard() {
         />
       </div>
 
-      {/* Add Maintenance Record Form */}
+      {/* Add Maintenance Record Form – Vertical layout */}
       <Card className="border border-gray-200 shadow-sm">
         <CardHeader>
           <CardTitle>Add Maintenance Record</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Vehicle
-                </label>
-                <Select
-                  value={formData.vehicle_id}
-                  onValueChange={(value) =>
-                    handleSelectChange("vehicle_id", value)
-                  }
-                >
-                  <SelectTrigger className="w-full bg-white text-black border border-gray-300 rounded-md">
-                    <SelectValue placeholder="Select vehicle" />
-                  </SelectTrigger>
-                  <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
-                    {vehicles.map((v) => (
-                      <SelectItem
-                        key={v.vehicle_id}
-                        value={v.vehicle_id.toString()}
-                        className="text-black hover:bg-gray-100"
-                      >
-                        {v.plate_number} ({v.vehicle_id})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Maintenance Type
-                </label>
-                <Select
-                  value={formData.type}
-                  onValueChange={(value) => handleSelectChange("type", value)}
-                >
-                  <SelectTrigger className="w-full bg-white text-black border border-gray-300 rounded-md">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
+            <div>
+              <label className="block text-sm font-medium mb-2">Vehicle</label>
+              <Select
+                value={formData.vehicle_id}
+                onValueChange={(value) =>
+                  handleSelectChange("vehicle_id", value)
+                }
+              >
+                <SelectTrigger className="w-full bg-white text-black border border-gray-300 rounded-md">
+                  <SelectValue placeholder="Select vehicle" />
+                </SelectTrigger>
+                <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
+                  {vehicles.map((v) => (
                     <SelectItem
-                      value="OIL_CHANGE"
+                      key={v.vehicle_id}
+                      value={v.vehicle_id.toString()}
                       className="text-black hover:bg-gray-100"
                     >
-                      Oil Change
+                      {v.plate_number} ({v.vehicle_id})
                     </SelectItem>
-                    <SelectItem
-                      value="BRAKE_SERVICE"
-                      className="text-black hover:bg-gray-100"
-                    >
-                      Brake Service
-                    </SelectItem>
-                    <SelectItem
-                      value="ENGINE_REPAIR"
-                      className="text-black hover:bg-gray-100"
-                    >
-                      Engine Repair
-                    </SelectItem>
-                    <SelectItem
-                      value="INSPECTION"
-                      className="text-black hover:bg-gray-100"
-                    >
-                      Inspection
-                    </SelectItem>
-                    <SelectItem
-                      value="OTHER"
-                      className="text-black hover:bg-gray-100"
-                    >
-                      Other
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Service Date
-                </label>
-                <Input
-                  type="date"
-                  name="service_date"
-                  value={formData.service_date}
-                  onChange={handleInputChange}
-                  required
-                  className="text-black bg-white border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">Status</label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) => handleSelectChange("status", value)}
-                >
-                  <SelectTrigger className="w-full bg-white text-black border border-gray-300 rounded-md">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
-                    <SelectItem
-                      value="SCHEDULED"
-                      className="text-black hover:bg-gray-100"
-                    >
-                      SCHEDULED
-                    </SelectItem>
-                    <SelectItem
-                      value="IN_PROGRESS"
-                      className="text-black hover:bg-gray-100"
-                    >
-                      IN_PROGRESS
-                    </SelectItem>
-                    <SelectItem
-                      value="COMPLETED"
-                      className="text-black hover:bg-gray-100"
-                    >
-                      COMPLETED
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Maintenance Type
+              </label>
+              <Select
+                value={formData.type}
+                onValueChange={(value) => handleSelectChange("type", value)}
+              >
+                <SelectTrigger className="w-full bg-white text-black border border-gray-300 rounded-md">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
+                  <SelectItem value="OIL_CHANGE">Oil Change</SelectItem>
+                  <SelectItem value="BRAKE_SERVICE">Brake Service</SelectItem>
+                  <SelectItem value="ENGINE_REPAIR">Engine Repair</SelectItem>
+                  <SelectItem value="INSPECTION">Inspection</SelectItem>
+                  <SelectItem value="OTHER">Other</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Service Date
+              </label>
+              <DatePicker
+                date={formData.service_date}
+                onDateChange={(dateStr) =>
+                  setFormData((prev) => ({ ...prev, service_date: dateStr }))
+                }
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Status</label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => handleSelectChange("status", value)}
+              >
+                <SelectTrigger className="w-full bg-white text-black border border-gray-300 rounded-md">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
+                  <SelectItem value="SCHEDULED">SCHEDULED</SelectItem>
+                  <SelectItem value="IN_PROGRESS">IN_PROGRESS</SelectItem>
+                  <SelectItem value="COMPLETED">COMPLETED</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div>
               <label className="block text-sm font-medium mb-2">
                 Description
@@ -271,14 +236,15 @@ export default function MaintenanceDashboard() {
                 className="text-black bg-white border border-gray-300 rounded-md"
               />
             </div>
-            <Button type="submit" className={`bg-primary ${buttonBase}`}>
+
+            <Button type="submit" className={`w-full bg-primary ${buttonBase}`}>
               Add Record
             </Button>
           </form>
         </CardContent>
       </Card>
 
-      {/* Recent Maintenance Table */}
+      {/* Recent Maintenance Table – remains full width */}
       <Card className="border border-gray-200 shadow-sm">
         <CardHeader>
           <CardTitle>Recent Maintenance</CardTitle>
@@ -324,10 +290,28 @@ export default function MaintenanceDashboard() {
                       <StatusBadge status={item.status} />
                     </td>
                     <td className="py-3 px-4 text-sm">
+                      {item.status === "SCHEDULED" && (
+                        <button
+                          onClick={() =>
+                            openActionDialog(
+                              item.maintenance_id,
+                              "IN_PROGRESS",
+                              "Start"
+                            )
+                          }
+                          className="px-3 py-1 text-xs font-medium border border-gray-300 text-black rounded-md hover:bg-blue-600 hover:text-white transition-colors"
+                        >
+                          Start
+                        </button>
+                      )}
                       {item.status === "IN_PROGRESS" && (
                         <button
                           onClick={() =>
-                            openCompleteDialog(item.maintenance_id)
+                            openActionDialog(
+                              item.maintenance_id,
+                              "COMPLETED",
+                              "Complete"
+                            )
                           }
                           className="px-3 py-1 text-xs font-medium border border-gray-300 text-black rounded-md hover:bg-red-700 hover:text-white transition-colors"
                         >
@@ -346,10 +330,14 @@ export default function MaintenanceDashboard() {
       <ConfirmDialog
         open={confirmDialogOpen}
         onOpenChange={setConfirmDialogOpen}
-        onConfirm={confirmComplete}
-        title="Complete Maintenance"
-        description="Are you sure you want to mark this maintenance as completed? This action will reactivate the vehicle."
-        confirmText="Complete"
+        onConfirm={confirmAction}
+        title="Confirm Action"
+        description={
+          pendingAction
+            ? `Are you sure you want to ${pendingAction.actionLabel.toLowerCase()} this maintenance?`
+            : ""
+        }
+        confirmText={pendingAction?.actionLabel || "Confirm"}
         cancelText="Cancel"
       />
     </div>

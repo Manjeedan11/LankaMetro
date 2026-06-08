@@ -8,6 +8,7 @@ import {
   updateVehicle,
   deleteVehicle,
   getAvailableVehicles,
+  requestSuddenTrip,
 } from "../application/vehicle.js";
 
 export const vehicleRouter = express.Router();
@@ -43,4 +44,11 @@ vehicleRouter.get(
   "/available",
   allowRoles("logistics_officer"),
   getAvailableVehicles
+);
+
+vehicleRouter.patch(
+  "/:id/request-sudden-trip",
+  authenticate,
+  allowRoles("depot_supervisor"),
+  requestSuddenTrip
 );

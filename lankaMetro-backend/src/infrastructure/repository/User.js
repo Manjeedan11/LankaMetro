@@ -99,6 +99,14 @@ export async function findByDepot(depotId) {
   return result.rows;
 }
 
+export async function findByRoleAndDepot(role, depotId) {
+  const result = await pool.query(
+    `SELECT user_id, full_name, email FROM "user" WHERE role = $1 AND depot_id = $2 AND status = 'ACTIVE'`,
+    [role, depotId]
+  );
+  return result.rows;
+}
+
 export default {
   findAll,
   findById,
@@ -108,4 +116,5 @@ export default {
   deleteById,
   countByRole,
   findByDepot,
+  findByRoleAndDepot,
 };

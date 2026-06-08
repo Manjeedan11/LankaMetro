@@ -1,4 +1,11 @@
-import { Plus, Edit2, Trash2, AlertCircle, CheckCircle } from "lucide-react";
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  AlertCircle,
+  CheckCircle,
+  Bell,
+} from "lucide-react";
 import { useState, useEffect } from "react";
 import { Toaster, toast } from "sonner";
 import StatusBadge from "@/components/standalone/StatusBadge";
@@ -13,6 +20,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import DeleteConfirmDialog from "@/components/standalone/DeleteConfirmDialog";
+import DatePicker from "@/components/standalone/DatePicker";
 import {
   useGetSchedulesQuery,
   useGetRoutesQuery,
@@ -21,6 +29,8 @@ import {
   useCreateScheduleMutation,
   useUpdateScheduleMutation,
   useDeleteScheduleMutation,
+  useGetNotificationsQuery,
+  useDeleteNotificationMutation,
 } from "@/lib/api";
 
 const extractDate = (dateValue) => {
@@ -42,6 +52,9 @@ export default function ScheduleManagement() {
   const { data: routes = [] } = useGetRoutesQuery();
   const { data: drivers = [] } = useGetDriversQuery();
   const { data: vehicles = [] } = useGetVehiclesQuery();
+  const { data: notifications = [], refetch: refetchNotifications } =
+    useGetNotificationsQuery();
+  const [deleteNotification] = useDeleteNotificationMutation();
 
   const [createSchedule] = useCreateScheduleMutation();
   const [updateSchedule] = useUpdateScheduleMutation();
@@ -61,7 +74,29 @@ export default function ScheduleManagement() {
     generate_return: false,
   });
 
-  // Pre-fill when editing
+  const suddenTripNotifications = notifications.filter(
+    (n) =>
+      n.type === "SUDDEN_TRIP" ||
+      n.type === "SCHEDULE_CONFLICT" ||
+      n.message?.toLowerCase().includes("sudden trip")
+  );
+
+  const handleDeleteNotification = async (id) => {
+    try {
+      await deleteNotification(id).unwrap();
+      refetchNotifications();
+      toast.success("Notification dismissed", {
+        icon: <CheckCircle className="h-4 w-4" />,
+        style: { background: "#dcfce7", color: "#166534" },
+      });
+    } catch (err) {
+      toast.error("Failed to dismiss notification", {
+        icon: <AlertCircle className="h-4 w-4" />,
+        style: { background: "#fee2e2", color: "#b91c1c" },
+      });
+    }
+  };
+
   useEffect(() => {
     if (editingId && schedules.length) {
       const schedule = schedules.find((s) => s.schedule_id === editingId);
@@ -195,12 +230,45 @@ export default function ScheduleManagement() {
     "border border-gray-300 text-black hover:bg-red-700 hover:text-white transition-colors";
 
   return (
-    <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
+    <div className="container mx-auto px-4 py-6 max-w-7xl space-y-4">
       <Toaster position="bottom-right" richColors={false} />
-      <div className="page-header">
+      <div>
         <h1 className="page-title">Schedule Management</h1>
         <p className="page-description">Create and manage trip schedules</p>
       </div>
+
+      {suddenTripNotifications.length > 0 && (
+        <Card className="border-blue-200 bg-blue-50 shadow-sm border-l-4 border-l-blue-500">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-blue-800">
+              <Bell className="h-5 w-5" />
+              Sudden Trip Requests
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2">
+              {suddenTripNotifications.map((notif) => (
+                <div
+                  key={notif.notification_id}
+                  className="flex items-center justify-between p-2 bg-white rounded border border-blue-100"
+                >
+                  <div className="text-sm text-gray-800">{notif.message}</div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      handleDeleteNotification(notif.notification_id)
+                    }
+                    className="text-blue-600 hover:text-blue-800"
+                  >
+                    Dismiss
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Button
         onClick={() => {
@@ -223,133 +291,128 @@ export default function ScheduleManagement() {
       </Button>
 
       {showForm && (
-        <Card className="border border-gray-200 shadow-sm overflow-visible">
-          <CardHeader>
+        <Card className="border border-gray-200 shadow-sm max-w-2xl overflow-visible bg-white">
+          <CardHeader className="bg-white">
             <CardTitle>
               {editingId ? "Edit Schedule" : "Create New Schedule"}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="bg-white">
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Select Route
-                  </label>
-                  <Select
-                    value={formData.route_id}
-                    onValueChange={(value) =>
-                      handleSelectChange("route_id", value)
-                    }
-                  >
-                    <SelectTrigger className="w-full text-black">
-                      <SelectValue placeholder="Select route" />
-                    </SelectTrigger>
-                    <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
-                      {routes.map((route) => (
-                        <SelectItem
-                          key={route.route_id}
-                          value={route.route_id.toString()}
-                        >
-                          {route.route_name} ({route.route_no})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Date</label>
-                  <Input
-                    type="date"
-                    name="schedule_date"
-                    value={formData.schedule_date}
-                    onChange={handleInputChange}
-                    required
-                    className="text-black"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Select Route
+                </label>
+                <Select
+                  value={formData.route_id}
+                  onValueChange={(value) =>
+                    handleSelectChange("route_id", value)
+                  }
+                >
+                  <SelectTrigger className="w-full text-black">
+                    <SelectValue placeholder="Select route" />
+                  </SelectTrigger>
+                  <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
+                    {routes.map((route) => (
+                      <SelectItem
+                        key={route.route_id}
+                        value={route.route_id.toString()}
+                      >
+                        {route.route_name} ({route.route_no})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Departure Time
-                  </label>
-                  <Input
-                    type="time"
-                    name="departure_time"
-                    value={formData.departure_time}
-                    onChange={handleInputChange}
-                    required
-                    className="text-black"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Arrival Time
-                  </label>
-                  <Input
-                    type="time"
-                    name="arrival_time"
-                    value={formData.arrival_time}
-                    onChange={handleInputChange}
-                    required
-                    className="text-black"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">Date</label>
+                <DatePicker
+                  date={formData.schedule_date}
+                  onDateChange={(dateStr) =>
+                    setFormData((prev) => ({ ...prev, schedule_date: dateStr }))
+                  }
+                />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Assign Driver
-                  </label>
-                  <Select
-                    value={formData.driver_id}
-                    onValueChange={(value) =>
-                      handleSelectChange("driver_id", value)
-                    }
-                  >
-                    <SelectTrigger className="w-full text-black">
-                      <SelectValue placeholder="Select driver" />
-                    </SelectTrigger>
-                    <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
-                      {drivers.map((driver) => (
-                        <SelectItem
-                          key={driver.driver_id}
-                          value={driver.driver_id.toString()}
-                        >
-                          {driver.full_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Assign Vehicle
-                  </label>
-                  <Select
-                    value={formData.vehicle_id}
-                    onValueChange={(value) =>
-                      handleSelectChange("vehicle_id", value)
-                    }
-                  >
-                    <SelectTrigger className="w-full text-black">
-                      <SelectValue placeholder="Select vehicle" />
-                    </SelectTrigger>
-                    <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
-                      {vehicles.map((vehicle) => (
-                        <SelectItem
-                          key={vehicle.vehicle_id}
-                          value={vehicle.vehicle_id.toString()}
-                        >
-                          {vehicle.plate_number}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Departure Time
+                </label>
+                <Input
+                  type="time"
+                  name="departure_time"
+                  value={formData.departure_time}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full text-black"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Arrival Time
+                </label>
+                <Input
+                  type="time"
+                  name="arrival_time"
+                  value={formData.arrival_time}
+                  onChange={handleInputChange}
+                  required
+                  className="w-full text-black"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Assign Driver
+                </label>
+                <Select
+                  value={formData.driver_id}
+                  onValueChange={(value) =>
+                    handleSelectChange("driver_id", value)
+                  }
+                >
+                  <SelectTrigger className="w-full text-black">
+                    <SelectValue placeholder="Select driver" />
+                  </SelectTrigger>
+                  <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
+                    {drivers.map((driver) => (
+                      <SelectItem
+                        key={driver.driver_id}
+                        value={driver.driver_id.toString()}
+                      >
+                        {driver.full_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Assign Vehicle
+                </label>
+                <Select
+                  value={formData.vehicle_id}
+                  onValueChange={(value) =>
+                    handleSelectChange("vehicle_id", value)
+                  }
+                >
+                  <SelectTrigger className="w-full text-black">
+                    <SelectValue placeholder="Select vehicle" />
+                  </SelectTrigger>
+                  <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
+                    {vehicles.map((vehicle) => (
+                      <SelectItem
+                        key={vehicle.vehicle_id}
+                        value={vehicle.vehicle_id.toString()}
+                      >
+                        {vehicle.plate_number}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="flex items-center gap-3">
@@ -386,40 +449,40 @@ export default function ScheduleManagement() {
         </Card>
       )}
 
-      <Card className="border border-gray-200 shadow-sm">
-        <CardHeader>
+      <Card className="border border-gray-200 shadow-sm bg-white">
+        <CardHeader className="bg-white">
           <CardTitle>Schedules</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+        <CardContent className="bg-white p-0">
+          <div className="overflow-x-auto bg-white">
+            <table className="w-full bg-white">
+              <thead className="bg-white">
+                <tr className="border-b border-gray-200 bg-white">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     ID
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Route
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Driver
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Vehicle
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Date
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Departure
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Arrival
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Status
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Actions
                   </th>
                 </tr>
@@ -428,33 +491,33 @@ export default function ScheduleManagement() {
                 {schedules.map((schedule) => (
                   <tr
                     key={schedule.schedule_id}
-                    className="border-b border-gray-100 hover:bg-gray-50"
+                    className="border-b border-gray-100 hover:bg-gray-50 bg-white"
                   >
-                    <td className="py-3 px-4 text-sm font-medium text-black">
+                    <td className="py-3 px-4 text-sm font-medium text-black bg-white">
                       {schedule.schedule_id}
                     </td>
-                    <td className="py-3 px-4 text-sm text-black">
+                    <td className="py-3 px-4 text-sm text-black bg-white">
                       {schedule.route_name || schedule.route_id}
                     </td>
-                    <td className="py-3 px-4 text-sm text-black">
+                    <td className="py-3 px-4 text-sm text-black bg-white">
                       {schedule.driver_name || schedule.driver_id}
                     </td>
-                    <td className="py-3 px-4 text-sm text-black">
+                    <td className="py-3 px-4 text-sm text-black bg-white">
                       {schedule.plate_number || schedule.vehicle_id}
                     </td>
-                    <td className="py-3 px-4 text-sm text-black">
+                    <td className="py-3 px-4 text-sm text-black bg-white">
                       {extractDate(schedule.schedule_date)}
                     </td>
-                    <td className="py-3 px-4 text-sm text-black">
+                    <td className="py-3 px-4 text-sm text-black bg-white">
                       {schedule.departure_time}
                     </td>
-                    <td className="py-3 px-4 text-sm text-black">
+                    <td className="py-3 px-4 text-sm text-black bg-white">
                       {schedule.arrival_time}
                     </td>
-                    <td className="py-3 px-4 text-sm">
+                    <td className="py-3 px-4 text-sm bg-white">
                       <StatusBadge status={schedule.status} />
                     </td>
-                    <td className="py-3 px-4 text-sm">
+                    <td className="py-3 px-4 text-sm bg-white">
                       <div className="flex gap-2">
                         <button
                           onClick={() => handleEdit(schedule)}

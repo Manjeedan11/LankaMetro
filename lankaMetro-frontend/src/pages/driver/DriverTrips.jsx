@@ -9,7 +9,7 @@ import {
 } from "@/lib/api";
 import { toast } from "sonner";
 
-export default function DriverTrips() { 
+export default function DriverTrips() {
   const {
     data: schedules = [],
     isLoading,
@@ -17,9 +17,6 @@ export default function DriverTrips() {
   } = useGetMySchedulesQuery();
   const [updateScheduleStatus] = useUpdateScheduleStatusMutation();
   const { data: notifications = [] } = useGetNotificationsQuery();
-
-  const forwardTrip = schedules[0];
-  const returnTrip = schedules[1];
 
   const handleStartTrip = async (scheduleId) => {
     try {
@@ -59,7 +56,8 @@ export default function DriverTrips() {
     }
   };
 
-  const buttonBase = "border border-gray-300 text-black hover:bg-red-700 hover:text-white transition-colors";
+  const buttonBase =
+    "border border-gray-300 text-black hover:bg-red-700 hover:text-white transition-colors";
 
   if (isLoading) return <div className="p-6">Loading your trips...</div>;
 
@@ -71,62 +69,77 @@ export default function DriverTrips() {
       </div>
 
       <div className="space-y-6">
-        {forwardTrip && (
-          <Card className="border border-gray-200 shadow-sm">
+        {/* Render all trips (forward and return) */}
+        {schedules.map((trip, index) => (
+          <Card
+            key={trip.schedule_id}
+            className="border border-gray-200 shadow-sm"
+          >
             <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Forward Trip</CardTitle>
-              <StatusBadge status={forwardTrip.status} />
+              <CardTitle>
+                {index === 0 && schedules.length > 1
+                  ? "Forward Trip"
+                  : index === 1 && schedules.length > 1
+                  ? "Return Trip"
+                  : `Trip ${index + 1}`}
+              </CardTitle>
+              <StatusBadge status={trip.status} />
             </CardHeader>
             <CardContent>
               <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Trip ID</span>
                   <span className="text-sm font-medium text-black">
-                    {forwardTrip.schedule_id}
+                    {trip.schedule_id}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Route</span>
                   <span className="text-sm font-medium text-black">
-                    {forwardTrip.route_name}
+                    {trip.route_name}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Vehicle</span>
                   <span className="text-sm font-medium text-black">
-                    {forwardTrip.plate_number}
+                    {trip.plate_number}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Departure</span>
                   <span className="text-sm font-medium text-black">
-                    {forwardTrip.departure_time}
+                    {trip.departure_time}
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-gray-600">Arrival</span>
                   <span className="text-sm font-medium text-black">
-                    {forwardTrip.arrival_time}
+                    {trip.arrival_time}
                   </span>
                 </div>
               </div>
               <div className="flex gap-2 mt-4">
-                {forwardTrip.status === "SCHEDULED" && (
+                {trip.status === "SCHEDULED" && (
                   <Button
                     className={`flex-1 bg-primary ${buttonBase}`}
-                    onClick={() => handleStartTrip(forwardTrip.schedule_id)}
+                    onClick={() => handleStartTrip(trip.schedule_id)}
                   >
                     <Play size={16} className="mr-2" />
                     Start Trip
                   </Button>
                 )}
-                {forwardTrip.status === "IN_PROGRESS" && (
+                {trip.status === "IN_PROGRESS" && (
                   <Button
                     className={`flex-1 bg-primary ${buttonBase}`}
-                    onClick={() => handleCompleteTrip(forwardTrip.schedule_id)}
+                    onClick={() => handleCompleteTrip(trip.schedule_id)}
                   >
                     <CheckCircle size={16} className="mr-2" />
                     Complete Trip
+                  </Button>
+                )}
+                {trip.status === "COMPLETED" && (
+                  <Button variant="outline" className={buttonBase} disabled>
+                    Completed
                   </Button>
                 )}
                 <Button variant="outline" className={buttonBase}>
@@ -135,74 +148,9 @@ export default function DriverTrips() {
               </div>
             </CardContent>
           </Card>
-        )}
+        ))}
 
-        {returnTrip && (
-          <Card className="border border-gray-200 shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Return Trip</CardTitle>
-              <StatusBadge status={returnTrip.status} />
-            </CardHeader>
-            <CardContent>
-              <div className="bg-gray-50 rounded-lg p-4 space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Trip ID</span>
-                  <span className="text-sm font-medium text-black">
-                    {returnTrip.schedule_id}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Route</span>
-                  <span className="text-sm font-medium text-black">
-                    {returnTrip.route_name}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Vehicle</span>
-                  <span className="text-sm font-medium text-black">
-                    {returnTrip.plate_number}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Departure</span>
-                  <span className="text-sm font-medium text-black">
-                    {returnTrip.departure_time}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">Arrival</span>
-                  <span className="text-sm font-medium text-black">
-                    {returnTrip.arrival_time}
-                  </span>
-                </div>
-              </div>
-              <div className="flex gap-2 mt-4">
-                {returnTrip.status === "SCHEDULED" && (
-                  <Button
-                    className={`flex-1 bg-primary ${buttonBase}`}
-                    onClick={() => handleStartTrip(returnTrip.schedule_id)}
-                  >
-                    <Play size={16} className="mr-2" />
-                    Start Trip
-                  </Button>
-                )}
-                {returnTrip.status === "IN_PROGRESS" && (
-                  <Button
-                    className={`flex-1 bg-primary ${buttonBase}`}
-                    onClick={() => handleCompleteTrip(returnTrip.schedule_id)}
-                  >
-                    <CheckCircle size={16} className="mr-2" />
-                    Complete Trip
-                  </Button>
-                )}
-                <Button variant="outline" className={buttonBase}>
-                  View Route
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
+        {/* Notifications Card */}
         <Card className="border border-blue-200 shadow-sm border-l-4 border-l-blue-500">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

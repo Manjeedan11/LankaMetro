@@ -1,5 +1,7 @@
 import vehicleRepository from "../infrastructure/repository/Vehicle.js";
 import depotRepository from "../infrastructure/repository/Depot.js";
+import notificationRepository from "../infrastructure/repository/Notification.js";
+import userRepository from "../infrastructure/repository/User.js";
 import ValidationError from "../domain/errors/validation-error.js";
 import NotFoundError from "../domain/errors/not-found-error.js";
 
@@ -108,6 +110,55 @@ export const getAvailableVehicles = async (req, res, next) => {
       depotId
     );
     res.status(200).json(vehicles);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const requestSuddenTrip = async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id);
+    const depotId = req.user.depotId;
+
+    // 1. Get vehicle and validate
+    const vehicle = await vehicleRepository.findById(id);
+    if (!vehicle) throw new NotFoundError("Vehicle not found");
+    if (vehicle.status !== "ACTIVE") {
+      throw new ValidationError(
+        "Only active vehicles can be requested for sudden trips"
+      );
+    }
+
+    // 2. Update vehicle status to PENDING
+    await vehicleRepository.update(id, { status: "PENDING" });
+
+    // 3. Find all logistics officers in the same depot
+    const logisticsUsers = await userRepository.findByRoleAndDepot(
+      "logistics_officer",
+      depotId
+    );
+
+    if (!logisticsUsers.length) {
+      console.warn(`No logistics officers found for depot ${depotId}`);
+    }
+
+    // 4. Create a notification for each logistics officer
+    for (const user of logisticsUsers) {
+      if (!user.user_id) {
+        console.error("Missing user_id for logistics officer:", user);
+        continue;
+      }
+      await notificationRepository.create({
+        user_id: user.user_id,
+        message: `🚨 Sudden trip request for vehicle ${vehicle.plate_number} (ID: ${vehicle.vehicle_id}). Please assign a schedule.`,
+        type: "SUDDEN_TRIP",
+        driver_id: null,
+      });
+    }
+
+    res.status(200).json({
+      message: "Sudden trip request sent. Logistics officer notified.",
+    });
   } catch (err) {
     next(err);
   }

@@ -65,13 +65,14 @@ export const createSchedule = async (req, res, next) => {
     if (route.availability !== "ACTIVE")
       throw new ValidationError("Route is not active");
 
-    // 2. Validate vehicle exists and is active (not maintenance)
+    // 2. Validate vehicle – allow ACTIVE or PENDING (from sudden trip)
     const vehicle = await vehicleRepository.findById(vehicle_id);
     if (!vehicle) throw new ValidationError("Vehicle not found");
-    if (vehicle.status !== "ACTIVE")
+    if (vehicle.status !== "ACTIVE" && vehicle.status !== "PENDING") {
       throw new ValidationError(
-        "Vehicle is not available (maintenance/retired)"
+        "Vehicle is not available (maintenance/retired or already scheduled)"
       );
+    }
 
     // 3. Validate driver availability and license
     const driver = await driverRepository.findById(driver_id, depotId);
@@ -100,7 +101,7 @@ export const createSchedule = async (req, res, next) => {
     if (vehicleOverlap)
       throw new ValidationError("Vehicle already has a schedule at this time");
 
-    // Checking for exact duplicate schedule (same route, date, departure, arrival)
+    // Checking for exact duplicate schedule
     const duplicate = await scheduleRepository.checkExactDuplicate(
       route_id,
       schedule_date,
@@ -125,7 +126,12 @@ export const createSchedule = async (req, res, next) => {
       depot_id: depotId,
     });
 
-    // 6. Generate return trip if requested
+    // 6. If vehicle was PENDING (from sudden trip), set it back to ACTIVE
+    if (vehicle.status === "PENDING") {
+      await vehicleRepository.update(vehicle_id, { status: "ACTIVE" });
+    }
+
+    // 7. Generate return trip if requested
     let returnTripId = null;
     if (generate_return) {
       let return_departure_time_calc, return_arrival_time_calc;
@@ -136,20 +142,14 @@ export const createSchedule = async (req, res, next) => {
       } else {
         // Auto-calculate: rest = 30 minutes after forward arrival
         const REST_MINUTES = 30;
-        // Parse forward arrival time (e.g., "09:00:00")
         const [arrHour, arrMin] = arrival_time.split(":").map(Number);
-        const forwardDurationMinutes = (() => {
-          const [depHour, depMin] = departure_time.split(":").map(Number);
-          return arrHour * 60 + arrMin - (depHour * 60 + depMin);
-        })();
-        // Return departure = forward arrival + REST_MINUTES
+        const [depHour, depMin] = departure_time.split(":").map(Number);
+        const forwardDurationMinutes =
+          arrHour * 60 + arrMin - (depHour * 60 + depMin);
         let returnDepTotalMinutes = arrHour * 60 + arrMin + REST_MINUTES;
         let returnDepHour = Math.floor(returnDepTotalMinutes / 60);
         let returnDepMin = returnDepTotalMinutes % 60;
-        // Wrap to next day if needed (though unlikely within same day)
         if (returnDepHour >= 24) {
-          // This would span to next day – you may want to reject or adjust date
-          // For simplicity, we assume same day; if not, throw error
           throw new ValidationError(
             "Return trip would cross midnight; please adjust manually."
           );
@@ -157,7 +157,6 @@ export const createSchedule = async (req, res, next) => {
         return_departure_time_calc = `${returnDepHour
           .toString()
           .padStart(2, "0")}:${returnDepMin.toString().padStart(2, "0")}:00`;
-        // Return arrival = return departure + forward duration
         let returnArrTotalMinutes =
           returnDepTotalMinutes + forwardDurationMinutes;
         let returnArrHour = Math.floor(returnArrTotalMinutes / 60);
@@ -172,7 +171,7 @@ export const createSchedule = async (req, res, next) => {
           .padStart(2, "0")}:${returnArrMin.toString().padStart(2, "0")}:00`;
       }
 
-      // Validate that return times do not overlap with driver/vehicle existing schedules
+      // Validate return trip overlaps
       const returnDriverOverlap = await scheduleRepository.checkDriverOverlap(
         driver_id,
         schedule_date,
@@ -195,8 +194,7 @@ export const createSchedule = async (req, res, next) => {
           "Return trip would overlap with vehicle's existing schedule"
         );
 
-      // Create return trip (same route_id for return; you could use a reverse route ID if needed)
-      const returnTripId = await returnTripRepository.create({
+      returnTripId = await returnTripRepository.create({
         original_schedule_id: scheduleId,
         departure_time: return_departure_time_calc,
         arrival_time: return_arrival_time_calc,
@@ -205,7 +203,7 @@ export const createSchedule = async (req, res, next) => {
       });
     }
 
-    // 7. Notify the driver (newly added)
+    // 8. Notify the driver
     await notifyDriver(
       driver_id,
       `🚍 New trip assigned: ${route.route_name} on ${schedule_date} at ${departure_time}`,
@@ -366,12 +364,27 @@ export const getMySchedules = async (req, res, next) => {
     const userId = req.user.userId;
     const driver = await driverRepository.findByUserId(userId);
     if (!driver) throw new NotFoundError("Driver not found");
+
     const today = new Date().toISOString().split("T")[0];
-    const schedules = await scheduleRepository.findByDriverAndDate(
+
+    // 1. Get forward trips (regular schedules)
+    const forwardTrips = await scheduleRepository.findByDriverAndDate(
       driver.driver_id,
       today
     );
-    res.status(200).json(schedules);
+
+    // 2. Get return trips (from return_trip table)
+    const returnTrips = await returnTripRepository.findByDriverAndDate(
+      driver.driver_id,
+      today
+    );
+
+    // 3. Merge and sort by departure time
+    const allTrips = [...forwardTrips, ...returnTrips].sort((a, b) =>
+      a.departure_time.localeCompare(b.departure_time)
+    );
+
+    res.status(200).json(allTrips);
   } catch (err) {
     next(err);
   }

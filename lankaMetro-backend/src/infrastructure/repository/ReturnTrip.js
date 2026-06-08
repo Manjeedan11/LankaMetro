@@ -51,8 +51,31 @@ export async function update(id, updates) {
   return result.rowCount > 0;
 }
 
+export async function findByDriverAndDate(driverId, date) {
+  const result = await pool.query(
+    `SELECT rt.return_trip_id as schedule_id,
+            rt.departure_time,
+            rt.arrival_time,
+            rt.status,
+            rt.return_route_id as route_id,
+            r.route_name,
+            v.plate_number,
+            'RETURN' as trip_type
+     FROM return_trip rt
+     JOIN schedule s ON rt.original_schedule_id = s.schedule_id
+     JOIN route r ON rt.return_route_id = r.route_id
+     JOIN vehicle v ON s.vehicle_id = v.vehicle_id
+     WHERE s.driver_id = $1
+       AND s.schedule_date = $2
+     ORDER BY rt.departure_time`,
+    [driverId, date]
+  );
+  return result.rows;
+}
+
 export default {
   create,
   findByOriginalScheduleId,
   update,
+  findByDriverAndDate,
 };
