@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "nodemon src/app.js",
     "build": "npm install",
-    "start": "src/app.js"
+    "start": "src/app.js",
+    "test": "vitest",
+    "test:coverage": "vitest --coverage"
   },
   "author": "",
   "license": "ISC",
@@ -25,5 +27,9 @@
     "nodemon": "^3.1.14",
     "pdfkit": "^0.18.0",
     "pg": "^8.21.0"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.8",
+    "vitest": "^4.1.8"
   }
 }
