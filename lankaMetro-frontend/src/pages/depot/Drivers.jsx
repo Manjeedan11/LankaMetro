@@ -1,16 +1,29 @@
-import { useGetDriversQuery } from "@/lib/api";
+import { useGetDriversQuery, useGetSchedulesQuery } from "@/lib/api";
 import StatusBadge from "@/components/standalone/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Drivers() {
+  const today = new Date().toISOString().split("T")[0];
   const { data: drivers = [], isLoading, isError } = useGetDriversQuery();
+  const { data: schedules = [] } = useGetSchedulesQuery(today);
+
+  const driverRouteMap = new Map();
+  schedules.forEach((schedule) => {
+    if (
+      schedule.driver_id &&
+      schedule.route_name &&
+      !driverRouteMap.has(schedule.driver_id)
+    ) {
+      driverRouteMap.set(schedule.driver_id, schedule.route_name);
+    }
+  });
 
   const totalDrivers = drivers.length;
   const availableDrivers = drivers.filter(
     (d) => d.availability === "AVAILABLE"
   ).length;
   const onTripDrivers = drivers.filter(
-    (d) => d.availability === "ON_TRIP"
+    (d) => d.availability === "ON_TRIP" || d.availability === "ON_DUTY"
   ).length;
   const offDutyDrivers = drivers.filter(
     (d) => d.availability === "OFF_DUTY"
@@ -21,6 +34,7 @@ export default function Drivers() {
       case "AVAILABLE":
         return "bg-green-100 text-green-800";
       case "ON_TRIP":
+      case "ON_DUTY":
         return "bg-blue-100 text-blue-800";
       case "OFF_DUTY":
         return "bg-gray-100 text-gray-800";
@@ -110,41 +124,41 @@ export default function Drivers() {
                   <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
                     Assigned Route
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
-                    Status
-                  </th>
                 </tr>
               </thead>
               <tbody>
-                {drivers.map((driver) => (
-                  <tr
-                    key={driver.driver_id}
-                    className="border-b border-gray-100 hover:bg-gray-50"
-                  >
-                    <td className="py-3 px-4 text-sm font-medium text-black">
-                      {driver.driver_id}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-black">
-                      {driver.full_name || "N/A"}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-black">
-                      {driver.license_number || "N/A"}
-                    </td>
-                    <td className="py-3 px-4 text-sm">
-                      <span
-                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getAvailabilityBadge(
-                          driver.availability
-                        )}`}
-                      >
-                        {driver.availability}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-sm text-black">—</td>{" "}
-                    <td className="py-3 px-4 text-sm">
-                      <StatusBadge status={driver.status} />
-                    </td>
-                  </tr>
-                ))}
+                {drivers.map((driver) => {
+                  const assignedRoute =
+                    driverRouteMap.get(driver.driver_id) || "—";
+                  return (
+                    <tr
+                      key={driver.driver_id}
+                      className="border-b border-gray-100 hover:bg-gray-50"
+                    >
+                      <td className="py-3 px-4 text-sm font-medium text-black">
+                        {driver.driver_id}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-black">
+                        {driver.full_name || "N/A"}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-black">
+                        {driver.license_number || "N/A"}
+                      </td>
+                      <td className="py-3 px-4 text-sm">
+                        <span
+                          className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getAvailabilityBadge(
+                            driver.availability
+                          )}`}
+                        >
+                          {driver.availability}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-sm text-black">
+                        {assignedRoute}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

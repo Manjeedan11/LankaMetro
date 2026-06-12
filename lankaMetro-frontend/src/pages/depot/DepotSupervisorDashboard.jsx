@@ -17,6 +17,26 @@ export default function DepotSupervisorDashboard() {
   const { data: schedules = [] } = useGetSchedulesQuery(today);
   const { data: maintenanceRecords = [] } = useGetMaintenanceRecordsQuery();
 
+  const vehicleRouteMap = new Map();
+  const driverRouteMap = new Map();
+
+  schedules.forEach((schedule) => {
+    if (
+      schedule.vehicle_id &&
+      schedule.route_name &&
+      !vehicleRouteMap.has(schedule.vehicle_id)
+    ) {
+      vehicleRouteMap.set(schedule.vehicle_id, schedule.route_name);
+    }
+    if (
+      schedule.driver_id &&
+      schedule.route_name &&
+      !driverRouteMap.has(schedule.driver_id)
+    ) {
+      driverRouteMap.set(schedule.driver_id, schedule.route_name);
+    }
+  });
+
   const totalVehicles = vehicles.length;
   const totalDrivers = drivers.length;
   const activeTrips = schedules.filter(
@@ -82,7 +102,6 @@ export default function DepotSupervisorDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Fleet Summary - Scrollable */}
         <Card className="border border-gray-200 shadow-sm">
           <CardHeader>
             <CardTitle>Fleet Summary</CardTitle>
@@ -93,33 +112,39 @@ export default function DepotSupervisorDashboard() {
                 {vehicles.length === 0 ? (
                   <p className="text-sm text-gray-500">No vehicles found.</p>
                 ) : (
-                  vehicles.map((vehicle) => (
-                    <div
-                      key={vehicle.vehicle_id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded"
-                    >
-                      <div>
-                        <p className="font-medium text-sm text-black">
-                          {vehicle.plate_number}
-                        </p>
-                        <p className="text-xs text-gray-600">
-                          Assigned route: N/A
-                        </p>
+                  vehicles.map((vehicle) => {
+                    const assignedRoute =
+                      vehicleRouteMap.get(vehicle.vehicle_id) || "Not assigned";
+                    return (
+                      <div
+                        key={vehicle.vehicle_id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded"
+                      >
+                        <div>
+                          <p className="font-medium text-sm text-black">
+                            {vehicle.plate_number}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            Assigned route: {assignedRoute}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <span
+                            className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
+                              vehicle.status === "ACTIVE"
+                                ? "bg-green-100 text-green-800"
+                                : vehicle.status === "MAINTENANCE"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-blue-100 text-blue-800"
+                            }`}
+                          >
+                            {vehicle.status}
+                          </span>
+                          <p className="text-xs text-gray-600 mt-1">Trips: 0</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <span
-                          className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
-                            vehicle.status === "ACTIVE"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-blue-100 text-blue-800"
-                          }`}
-                        >
-                          {vehicle.status}
-                        </span>
-                        <p className="text-xs text-gray-600 mt-1">Trips: 0</p>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
               <ScrollBar orientation="vertical" />
@@ -127,7 +152,6 @@ export default function DepotSupervisorDashboard() {
           </CardContent>
         </Card>
 
-        {/* Driver Availability - Scrollable */}
         <Card className="border border-gray-200 shadow-sm">
           <CardHeader>
             <CardTitle>Driver Availability</CardTitle>
@@ -138,30 +162,40 @@ export default function DepotSupervisorDashboard() {
                 {drivers.length === 0 ? (
                   <p className="text-sm text-gray-500">No drivers found.</p>
                 ) : (
-                  drivers.map((driver) => (
-                    <div
-                      key={driver.driver_id}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded"
-                    >
-                      <div>
-                        <p className="font-medium text-sm text-black">
-                          {driver.full_name}
-                        </p>
-                        <p className="text-xs text-gray-600">Route: N/A</p>
-                      </div>
-                      <span
-                        className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
-                          driver.availability === "AVAILABLE"
-                            ? "bg-green-100 text-green-800"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
+                  drivers.map((driver) => {
+                    const assignedRoute =
+                      driverRouteMap.get(driver.driver_id) || "Not assigned";
+                    return (
+                      <div
+                        key={driver.driver_id}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded"
                       >
-                        {driver.availability === "AVAILABLE"
-                          ? "Available"
-                          : "Unavailable"}
-                      </span>
-                    </div>
-                  ))
+                        <div>
+                          <p className="font-medium text-sm text-black">
+                            {driver.full_name}
+                          </p>
+                          <p className="text-xs text-gray-600">
+                            Route: {assignedRoute}
+                          </p>
+                        </div>
+                        <span
+                          className={`inline-block px-2 py-1 rounded text-xs font-semibold ${
+                            driver.availability === "AVAILABLE"
+                              ? "bg-green-100 text-green-800"
+                              : driver.availability === "ON_DUTY"
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {driver.availability === "AVAILABLE"
+                            ? "Available"
+                            : driver.availability === "ON_DUTY"
+                            ? "On Duty"
+                            : "Unavailable"}
+                        </span>
+                      </div>
+                    );
+                  })
                 )}
               </div>
               <ScrollBar orientation="vertical" />

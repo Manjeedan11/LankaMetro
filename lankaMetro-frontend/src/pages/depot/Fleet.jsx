@@ -11,18 +11,41 @@ import ConfirmDialog from "@/components/standalone/ConfirmDialog";
 import { toast } from "sonner";
 
 export default function Fleet() {
+  const today = new Date().toISOString().split("T")[0];
+
   const {
     data: vehicles = [],
-    isLoading,
-    isError,
-    refetch,
+    isLoading: vehiclesLoading,
+    isError: vehiclesError,
+    refetch: refetchVehicles,
   } = useGetVehiclesQuery();
-  const today = new Date().toISOString().split("T")[0];
-  const { data: schedules = [] } = useGetSchedulesQuery(today);
+
+  const {
+    data: schedules = [],
+    isLoading: schedulesLoading,
+    error: schedulesError,
+  } = useGetSchedulesQuery(today, {
+    skip: !today,
+  });
+
   const [requestSuddenTrip] = useRequestSuddenTripMutation();
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedVehicleId, setSelectedVehicleId] = useState(null);
   const [selectedVehiclePlate, setSelectedVehiclePlate] = useState("");
+
+  const vehicleRouteMap = new Map();
+  if (Array.isArray(schedules)) {
+    schedules.forEach((schedule) => {
+      if (
+        schedule.vehicle_id &&
+        schedule.route_name &&
+        !vehicleRouteMap.has(schedule.vehicle_id)
+      ) {
+        vehicleRouteMap.set(schedule.vehicle_id, schedule.route_name);
+      }
+    });
+  }
 
   const totalVehicles = vehicles.length;
   const availableVehicles = vehicles.filter(
@@ -50,7 +73,7 @@ export default function Fleet() {
           style: { background: "#dcfce7", color: "#166534" },
         }
       );
-      refetch();
+      refetchVehicles();
     } catch (err) {
       toast.error(err?.data?.message || "Failed to request sudden trip", {
         icon: "❌",
@@ -69,16 +92,23 @@ export default function Fleet() {
     setDialogOpen(true);
   };
 
-  if (isLoading)
+  if (vehiclesLoading || schedulesLoading) {
     return (
       <div className="container mx-auto px-4 py-6">Loading fleet data...</div>
     );
-  if (isError)
+  }
+
+  if (vehiclesError) {
     return (
       <div className="container mx-auto px-4 py-6 text-red-600">
-        Error loading fleet data.
+        Error loading fleet data. Please try again later.
       </div>
     );
+  }
+
+  if (schedulesError) {
+    console.error("Schedules fetch error:", schedulesError);
+  }
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
@@ -161,7 +191,8 @@ export default function Fleet() {
                   const todaysTrips = schedules.filter(
                     (s) => s.vehicle_id === vehicle.vehicle_id
                   ).length;
-                  const assignedRoute = "—";
+                  const assignedRoute =
+                    vehicleRouteMap.get(vehicle.vehicle_id) || "—";
                   return (
                     <tr
                       key={vehicle.vehicle_id}
