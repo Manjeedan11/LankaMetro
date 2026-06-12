@@ -21,7 +21,7 @@ export async function sendCredentials(email, fullName, plainPassword, role) {
   const textContent = `
 Dear ${fullName},
 
-Your SRMSS account has been created.
+Your LankaMetro account has been created.
 
 Email: ${email}
 Password: ${plainPassword}
@@ -32,11 +32,11 @@ Login at: ${appUrl}
 Please change your password after first login.
 
 Regards,
-SRMSS Team
+LankaMetro Team
     `;
 
   const htmlContent = `
-<h2>Welcome to SRMSS</h2>
+<h2>Welcome to LankaMetro</h2>
 <p>Dear ${fullName},</p>
 <p>Your account has been created with the following credentials:</p>
 <ul>

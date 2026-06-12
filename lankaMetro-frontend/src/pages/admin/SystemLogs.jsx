@@ -2,16 +2,9 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useGetSystemLogsQuery } from "@/lib/api";
-import StatusBadge from "@/components/standalone/StatusBadge";
 import { format } from "date-fns";
+import DatePicker from "@/components/standalone/DatePicker";
 
 export default function SystemLogs() {
   const [page, setPage] = useState(1);
@@ -34,7 +27,7 @@ export default function SystemLogs() {
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
-    setPage(1); // reset to first page on filter change
+    setPage(1);
   };
 
   const clearFilters = () => {
@@ -52,66 +45,82 @@ export default function SystemLogs() {
         <p className="page-description">Audit log of all system activities</p>
       </div>
 
+      {/* COMPACT FILTER CARD */}
       <Card className="border border-gray-200 shadow-sm">
-        <CardHeader>
-          <CardTitle>Filters</CardTitle>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Filters</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">
+          <div className="flex flex-wrap items-end gap-3">
+            {/* Date From - fixed narrower width */}
+            <div className="w-30">
+              <label className="block text-xs font-medium text-gray-600 mb-1">
                 Date From
               </label>
-              <Input
-                type="date"
-                value={filters.startDate}
-                onChange={(e) =>
-                  handleFilterChange("startDate", e.target.value)
+              <DatePicker
+                date={filters.startDate}
+                onDateChange={(dateStr) =>
+                  handleFilterChange("startDate", dateStr)
                 }
-                className="text-black"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Date To</label>
-              <Input
-                type="date"
-                value={filters.endDate}
-                onChange={(e) => handleFilterChange("endDate", e.target.value)}
-                className="text-black"
+            {/* Date To - fixed narrower width */}
+            <div className="w-30">
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Date To
+              </label>
+              <DatePicker
+                date={filters.endDate}
+                onDateChange={(dateStr) =>
+                  handleFilterChange("endDate", dateStr)
+                }
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">User ID</label>
+            {/* User ID - flexible, left-aligned */}
+            <div className="flex-1 min-w-[140px]">
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                User ID
+              </label>
               <Input
                 type="number"
                 placeholder="User ID"
                 value={filters.userId}
                 onChange={(e) => handleFilterChange("userId", e.target.value)}
-                className="text-black"
+                className="h-8 text-sm"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Action</label>
+            {/* Action - flexible, left-aligned */}
+            <div className="flex-1 min-w-[160px]">
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Action
+              </label>
               <Input
                 type="text"
                 placeholder="e.g., Create Depot"
                 value={filters.action}
                 onChange={(e) => handleFilterChange("action", e.target.value)}
-                className="text-black"
+                className="h-8 text-sm"
               />
             </div>
-          </div>
-          <div className="flex gap-2 mt-4">
-            <Button variant="outline" onClick={clearFilters}>
-              Clear Filters
-            </Button>
+            {/* Clear button - stays on right */}
+            <div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearFilters}
+                className="h-8 text-xs whitespace-nowrap rounded-md"
+              >
+                Clear Filters
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
 
+      {/* Logs Table – unchanged */}
       <Card className="border border-gray-200 shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Activity Logs</CardTitle>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Activity Logs</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -121,17 +130,17 @@ export default function SystemLogs() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-gray-200">
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                    <tr className="border-b border-gray-200 bg-gray-50">
+                      <th className="text-left py-2 px-3 text-xs font-semibold text-gray-600">
                         Time
                       </th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                      <th className="text-left py-2 px-3 text-xs font-semibold text-gray-600">
                         User
                       </th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                      <th className="text-left py-2 px-3 text-xs font-semibold text-gray-600">
                         Action
                       </th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                      <th className="text-left py-2 px-3 text-xs font-semibold text-gray-600">
                         Details
                       </th>
                     </tr>
@@ -141,7 +150,7 @@ export default function SystemLogs() {
                       <tr>
                         <td
                           colSpan="4"
-                          className="text-center py-6 text-gray-500"
+                          className="text-center py-6 text-gray-500 text-sm"
                         >
                           No logs found.
                         </td>
@@ -152,19 +161,19 @@ export default function SystemLogs() {
                           key={log.log_id}
                           className="border-b border-gray-100 hover:bg-gray-50"
                         >
-                          <td className="py-3 px-4 text-sm text-gray-500">
+                          <td className="py-2 px-3 text-xs text-gray-500">
                             {format(
                               new Date(log.log_time),
                               "yyyy-MM-dd HH:mm:ss"
                             )}
                           </td>
-                          <td className="py-3 px-4 text-sm text-gray-900">
+                          <td className="py-2 px-3 text-xs text-gray-900">
                             {log.user_name}
                           </td>
-                          <td className="py-3 px-4 text-sm text-gray-900">
+                          <td className="py-2 px-3 text-xs text-gray-900">
                             {log.action}
                           </td>
-                          <td className="py-3 px-4 text-sm text-gray-600">
+                          <td className="py-2 px-3 text-xs text-gray-600">
                             {log.details || "—"}
                           </td>
                         </tr>
@@ -173,23 +182,26 @@ export default function SystemLogs() {
                   </tbody>
                 </table>
               </div>
-              {/* Pagination */}
               {pagination.pages > 1 && (
-                <div className="flex justify-between items-center mt-4">
+                <div className="flex justify-end items-center gap-4 mt-4">
                   <Button
                     variant="outline"
+                    size="sm"
                     disabled={page === 1}
                     onClick={() => setPage((p) => p - 1)}
+                    className="h-8 text-xs"
                   >
                     Previous
                   </Button>
-                  <span className="text-sm text-gray-600">
+                  <span className="text-xs text-gray-600">
                     Page {page} of {pagination.pages}
                   </span>
                   <Button
                     variant="outline"
+                    size="sm"
                     disabled={page === pagination.pages}
                     onClick={() => setPage((p) => p + 1)}
+                    className="h-8 text-xs"
                   >
                     Next
                   </Button>

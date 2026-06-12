@@ -15,6 +15,7 @@ import {
   useGetRouteSummaryQuery,
   useExportScheduleReportPDFQuery,
 } from "@/lib/api";
+import DatePicker from "@/components/standalone/DatePicker";
 
 export default function Reports() {
   const [dateFrom, setDateFrom] = useState("2024-05-01");
@@ -68,13 +69,6 @@ export default function Reports() {
     : 0;
   const activeVehicles = 9;
 
-  const filteredSchedule =
-    routeFilter === "all"
-      ? scheduleData
-      : scheduleData.filter(
-          (item) => item.route_id?.toString() === routeFilter
-        );
-
   const buttonBase =
     "border border-gray-300 text-black hover:bg-red-700 hover:text-white transition-colors";
 
@@ -87,39 +81,43 @@ export default function Reports() {
         </p>
       </div>
 
+      {/* Filter Card - Compact styling (kept) */}
       <Card className="border border-gray-200 shadow-sm bg-white">
-        <CardHeader className="bg-white">
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-            <Filter size={20} />
+        <CardHeader className="bg-white pb-2">
+          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+            <Filter size={18} />
             Report Filters
           </CardTitle>
         </CardHeader>
         <CardContent className="bg-white">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">
+          <div className="flex flex-wrap items-end gap-3">
+            {/* Date From */}
+            <div className="w-30">
+              <label className="block text-xs font-medium text-gray-600 mb-1">
                 Date From
               </label>
-              <Input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="text-black"
+              <DatePicker
+                date={dateFrom}
+                onDateChange={(dateStr) => setDateFrom(dateStr)}
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Date To</label>
-              <Input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="text-black"
+            {/* Date To */}
+            <div className="w-30">
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Date To
+              </label>
+              <DatePicker
+                date={dateTo}
+                onDateChange={(dateStr) => setDateTo(dateStr)}
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Route</label>
+            {/* Route */}
+            <div className="flex-1 w-20">
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Route
+              </label>
               <Select value={routeFilter} onValueChange={setRouteFilter}>
-                <SelectTrigger className="w-full text-black">
+                <SelectTrigger className="w-full text-black h-8 text-sm">
                   <SelectValue placeholder="Select route" />
                 </SelectTrigger>
                 <SelectContent>
@@ -135,21 +133,23 @@ export default function Reports() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              className={buttonBase}
-              onClick={handleExportPDF}
-              disabled={pdfLoading}
-            >
-              <Download size={16} className="mr-2" />
-              {pdfLoading ? "Generating..." : "Generate & Export PDF"}
-            </Button>
+            {/* Export Button */}
+            <div>
+              <Button
+                variant="outline"
+                size="sm"
+                className={`h-8 text-sm ${buttonBase} rounded-md`}
+                onClick={handleExportPDF}
+                disabled={pdfLoading}
+              >
+                <Download size={14} className="mr-2" />
+                {pdfLoading ? "Generating..." : "Generate & Export PDF"}
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
-
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="border border-gray-200 shadow-sm bg-white">
           <CardContent className="p-4 bg-white">
@@ -185,9 +185,12 @@ export default function Reports() {
         </Card>
       </div>
 
+      {/* Route Performance Table - Normal styling (reverted) */}
       <Card className="border border-gray-200 shadow-sm bg-white">
         <CardHeader className="bg-white">
-          <CardTitle>Route Performance Summary</CardTitle>
+          <CardTitle className="text-lg font-semibold">
+            Route Performance Summary
+          </CardTitle>
         </CardHeader>
         <CardContent className="bg-white p-0">
           <div className="overflow-x-auto bg-white">

@@ -227,7 +227,7 @@ export default function Fleet() {
                                 vehicle.plate_number
                               )
                             }
-                            className="border border-gray-300 text-black hover:bg-red-700 hover:text-white"
+                            className="border border-gray-300 text-black hover:bg-red-700 hover:text-white rounded-md"
                           >
                             Request Trip
                           </Button>

@@ -19,13 +19,18 @@ export async function findAll(limit = 100, offset = 0, filters = {}) {
     `;
   const values = [];
   let i = 1;
+
   if (filters.startDate) {
     query += ` AND log_time >= $${i++}`;
     values.push(filters.startDate);
   }
   if (filters.endDate) {
-    query += ` AND log_time <= $${i++}`;
-    values.push(filters.endDate);
+    // Include the entire end date by moving to the next day
+    query += ` AND log_time < $${i++}`;
+    const nextDay = new Date(filters.endDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    const nextDayStr = nextDay.toISOString().split("T")[0];
+    values.push(nextDayStr);
   }
   if (filters.userId) {
     query += ` AND user_id = $${i++}`;
@@ -35,8 +40,10 @@ export async function findAll(limit = 100, offset = 0, filters = {}) {
     query += ` AND action ILIKE $${i++}`;
     values.push(`%${filters.action}%`);
   }
+
   query += ` ORDER BY log_time DESC LIMIT $${i++} OFFSET $${i++}`;
   values.push(limit, offset);
+
   const result = await pool.query(query, values);
   return result.rows;
 }
@@ -45,13 +52,17 @@ export async function count(filters = {}) {
   let query = `SELECT COUNT(*) FROM system_log WHERE 1=1`;
   const values = [];
   let i = 1;
+
   if (filters.startDate) {
     query += ` AND log_time >= $${i++}`;
     values.push(filters.startDate);
   }
   if (filters.endDate) {
-    query += ` AND log_time <= $${i++}`;
-    values.push(filters.endDate);
+    query += ` AND log_time < $${i++}`;
+    const nextDay = new Date(filters.endDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    const nextDayStr = nextDay.toISOString().split("T")[0];
+    values.push(nextDayStr);
   }
   if (filters.userId) {
     query += ` AND user_id = $${i++}`;
@@ -61,6 +72,7 @@ export async function count(filters = {}) {
     query += ` AND action ILIKE $${i++}`;
     values.push(`%${filters.action}%`);
   }
+
   const result = await pool.query(query, values);
   return parseInt(result.rows[0].count);
 }
