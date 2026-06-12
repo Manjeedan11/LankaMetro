@@ -1,5 +1,6 @@
-import { Plus, Edit2, Trash2 } from "lucide-react";
+import { Plus, Edit2, Trash2, AlertCircle, CheckCircle } from "lucide-react";
 import { useState } from "react";
+import { Toaster, toast } from "sonner";
 import StatusBadge from "@/components/standalone/StatusBadge";
 import { Input } from "@/components/ui/input";
 import {
@@ -54,8 +55,16 @@ export default function UserManagement() {
       if (editingId) {
         const { password, ...updateData } = formData;
         await updateUser({ id: editingId, ...updateData }).unwrap();
+        toast.success("User updated successfully", {
+          icon: <CheckCircle className="h-4 w-4" />,
+          style: { background: "#dcfce7", color: "#166534" },
+        });
       } else {
         await createUser(formData).unwrap();
+        toast.success("User created successfully", {
+          icon: <CheckCircle className="h-4 w-4" />,
+          style: { background: "#dcfce7", color: "#166534" },
+        });
       }
       refetch();
       setShowForm(false);
@@ -70,7 +79,10 @@ export default function UserManagement() {
       });
     } catch (err) {
       console.error("Failed to save user:", err);
-      alert("Error saving user");
+      toast.error(err?.data?.message || "Error saving user", {
+        icon: <AlertCircle className="h-4 w-4" />,
+        style: { background: "#fee2e2", color: "#b91c1c" },
+      });
     }
   };
 
@@ -96,8 +108,15 @@ export default function UserManagement() {
     try {
       await deleteUser(deleteTargetId).unwrap();
       refetch();
+      toast.success("User disabled successfully", {
+        icon: <CheckCircle className="h-4 w-4" />,
+        style: { background: "#dcfce7", color: "#166534" },
+      });
     } catch (err) {
-      alert("Delete failed");
+      toast.error(err?.data?.message || "Delete failed", {
+        icon: <AlertCircle className="h-4 w-4" />,
+        style: { background: "#fee2e2", color: "#b91c1c" },
+      });
     } finally {
       setDeleteDialogOpen(false);
       setDeleteTargetId(null);
@@ -109,6 +128,7 @@ export default function UserManagement() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
+      <Toaster position="bottom-right" richColors={false} />
       <div className="page-header">
         <h1 className="page-title">User Management</h1>
         <p className="page-description">Manage system users and roles</p>

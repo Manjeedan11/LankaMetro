@@ -42,11 +42,18 @@ export const createVehicle = async (req, res, next) => {
       );
     }
 
-    // Check depot exists
     const depot = await depotRepository.findById(depot_id);
     if (!depot) throw new ValidationError("Depot not found");
 
-    // Optional: check plate_number uniqueness (database has UNIQUE constraint)
+    const existingVehicle = await vehicleRepository.findByPlateNumber(
+      plate_number
+    );
+    if (existingVehicle) {
+      throw new ValidationError(
+        `Vehicle with plate number "${plate_number}" already exists.`
+      );
+    }
+
     const newId = await vehicleRepository.create({
       plate_number,
       capacity,

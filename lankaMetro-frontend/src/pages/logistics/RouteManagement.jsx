@@ -1,5 +1,13 @@
-import { Plus, Edit2, Trash2, MapPin } from "lucide-react";
+import {
+  Plus,
+  Edit2,
+  Trash2,
+  MapPin,
+  AlertCircle,
+  CheckCircle,
+} from "lucide-react";
 import { useState, useEffect } from "react";
+import { Toaster, toast } from "sonner";
 import StatusBadge from "@/components/standalone/StatusBadge";
 import { Input } from "@/components/ui/input";
 import {
@@ -117,9 +125,17 @@ export default function RouteManagement() {
       let routeId = editingId;
       if (editingId) {
         await updateRoute({ id: editingId, ...formData }).unwrap();
+        toast.success("Route updated successfully", {
+          icon: <CheckCircle className="h-4 w-4" />,
+          style: { background: "#dcfce7", color: "#166534" },
+        });
         routeId = editingId;
       } else {
         const res = await createRoute(formData).unwrap();
+        toast.success("Route created successfully", {
+          icon: <CheckCircle className="h-4 w-4" />,
+          style: { background: "#dcfce7", color: "#166534" },
+        });
         routeId = res.route_id;
       }
       if (editingId && existingStops.length) {
@@ -155,7 +171,10 @@ export default function RouteManagement() {
       setRouteStops([]);
     } catch (err) {
       console.error("Failed to save route:", err);
-      alert("Error saving route");
+      toast.error(err?.data?.message || "Error saving route", {
+        icon: <AlertCircle className="h-4 w-4" />,
+        style: { background: "#fee2e2", color: "#b91c1c" },
+      });
     }
   };
 
@@ -182,8 +201,15 @@ export default function RouteManagement() {
     try {
       await deleteRoute(deleteTargetId).unwrap();
       refetch();
+      toast.success("Route disabled successfully", {
+        icon: <CheckCircle className="h-4 w-4" />,
+        style: { background: "#dcfce7", color: "#166534" },
+      });
     } catch (err) {
-      alert("Delete failed");
+      toast.error(err?.data?.message || "Delete failed", {
+        icon: <AlertCircle className="h-4 w-4" />,
+        style: { background: "#fee2e2", color: "#b91c1c" },
+      });
     } finally {
       setDeleteDialogOpen(false);
       setDeleteTargetId(null);
@@ -198,6 +224,7 @@ export default function RouteManagement() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl space-y-4">
+      <Toaster position="bottom-right" richColors={false} />
       <div>
         <h1 className="page-title">Route Management</h1>
         <p className="page-description">Create and manage transport routes</p>
@@ -233,6 +260,7 @@ export default function RouteManagement() {
           </CardHeader>
           <CardContent className="bg-white">
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* form fields unchanged */}
               <div>
                 <label className="block text-sm font-medium mb-2">
                   Route Number

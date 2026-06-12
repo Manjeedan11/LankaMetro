@@ -92,6 +92,14 @@ export async function updateStatus(vehicleId, newStatus) {
   return result.rowCount > 0;
 }
 
+export async function findByPlateNumber(plateNumber) {
+  const result = await pool.query(
+    "SELECT vehicle_id FROM vehicle WHERE plate_number = $1",
+    [plateNumber]
+  );
+  return result.rows[0] || null;
+}
+
 export default {
   findAll,
   findById,
@@ -100,4 +108,5 @@ export default {
   deleteById,
   findAvailableVehicles,
   updateStatus,
+  findByPlateNumber,
 };

@@ -1,5 +1,6 @@
-import { Plus, Edit2, Trash2 } from "lucide-react";
+import { Plus, Edit2, Trash2, AlertCircle, CheckCircle } from "lucide-react";
 import { useState } from "react";
+import { Toaster, toast } from "sonner";
 import StatusBadge from "@/components/standalone/StatusBadge";
 import { Input } from "@/components/ui/input";
 import {
@@ -52,8 +53,16 @@ export default function VehicleManagement() {
     try {
       if (editingId) {
         await updateVehicle({ id: editingId, ...formData }).unwrap();
+        toast.success("Vehicle updated successfully", {
+          icon: <CheckCircle className="h-4 w-4" />,
+          style: { background: "#dcfce7", color: "#166534" },
+        });
       } else {
         await createVehicle(formData).unwrap();
+        toast.success("Vehicle created successfully", {
+          icon: <CheckCircle className="h-4 w-4" />,
+          style: { background: "#dcfce7", color: "#166534" },
+        });
       }
       refetch();
       setShowForm(false);
@@ -67,7 +76,10 @@ export default function VehicleManagement() {
       });
     } catch (err) {
       console.error("Failed to save vehicle:", err);
-      alert("Error saving vehicle");
+      toast.error(err?.data?.message || "Error saving vehicle", {
+        icon: <AlertCircle className="h-4 w-4" />,
+        style: { background: "#fee2e2", color: "#b91c1c" },
+      });
     }
   };
 
@@ -92,8 +104,15 @@ export default function VehicleManagement() {
     try {
       await deleteVehicle(deleteTargetId).unwrap();
       refetch();
+      toast.success("Vehicle retired successfully", {
+        icon: <CheckCircle className="h-4 w-4" />,
+        style: { background: "#dcfce7", color: "#166534" },
+      });
     } catch (err) {
-      alert("Delete failed");
+      toast.error(err?.data?.message || "Delete failed", {
+        icon: <AlertCircle className="h-4 w-4" />,
+        style: { background: "#fee2e2", color: "#b91c1c" },
+      });
     } finally {
       setDeleteDialogOpen(false);
       setDeleteTargetId(null);
@@ -105,6 +124,7 @@ export default function VehicleManagement() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
+      <Toaster position="bottom-right" richColors={false} />
       <div className="page-header">
         <h1 className="page-title">Vehicle Management</h1>
         <p className="page-description">Manage all transport vehicles</p>

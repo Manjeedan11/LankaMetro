@@ -1,5 +1,6 @@
-import { Plus, Edit2, Trash2 } from "lucide-react";
+import { Plus, Edit2, Trash2, AlertCircle, CheckCircle } from "lucide-react";
 import { useState } from "react";
+import { Toaster, toast } from "sonner";
 import StatusBadge from "@/components/standalone/StatusBadge";
 import { Input } from "@/components/ui/input";
 import {
@@ -49,7 +50,6 @@ export default function DepotManagement() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      // Convert latitude/longitude to numbers or null
       const payload = {
         ...formData,
         latitude: formData.latitude ? parseFloat(formData.latitude) : null,
@@ -57,8 +57,16 @@ export default function DepotManagement() {
       };
       if (editingId) {
         await updateDepot({ id: editingId, ...payload }).unwrap();
+        toast.success("Depot updated successfully", {
+          icon: <CheckCircle className="h-4 w-4" />,
+          style: { background: "#dcfce7", color: "#166534" },
+        });
       } else {
         await createDepot(payload).unwrap();
+        toast.success("Depot created successfully", {
+          icon: <CheckCircle className="h-4 w-4" />,
+          style: { background: "#dcfce7", color: "#166534" },
+        });
       }
       refetch();
       setShowForm(false);
@@ -73,7 +81,10 @@ export default function DepotManagement() {
       });
     } catch (err) {
       console.error("Failed to save depot:", err);
-      alert("Error saving depot");
+      toast.error(err?.data?.message || "Error saving depot", {
+        icon: <AlertCircle className="h-4 w-4" />,
+        style: { background: "#fee2e2", color: "#b91c1c" },
+      });
     }
   };
 
@@ -99,8 +110,15 @@ export default function DepotManagement() {
     try {
       await deleteDepot(deleteTargetId).unwrap();
       refetch();
+      toast.success("Depot disabled successfully", {
+        icon: <CheckCircle className="h-4 w-4" />,
+        style: { background: "#dcfce7", color: "#166534" },
+      });
     } catch (err) {
-      alert("Delete failed");
+      toast.error(err?.data?.message || "Delete failed", {
+        icon: <AlertCircle className="h-4 w-4" />,
+        style: { background: "#fee2e2", color: "#b91c1c" },
+      });
     } finally {
       setDeleteDialogOpen(false);
       setDeleteTargetId(null);
@@ -112,6 +130,7 @@ export default function DepotManagement() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl space-y-6">
+      <Toaster position="bottom-right" richColors={false} />
       <div className="page-header">
         <h1 className="page-title">Depot Management</h1>
         <p className="page-description">Manage all transport depots</p>
@@ -142,6 +161,7 @@ export default function DepotManagement() {
             {editingId ? "Edit Depot" : "Add New Depot"}
           </h2>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* form fields unchanged */}
             <div>
               <label className="block text-sm font-medium mb-2">
                 Depot Name

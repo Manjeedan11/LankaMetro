@@ -20,16 +20,20 @@ export default function MainLayout() {
     dispatch(logout());
   };
 
+  // Extract user details
+  const userName = user?.full_name || "User";
+  const userRole = user?.role || "";
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Sidebar
-        userRole={user?.role}
+        userRole={userRole}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
       <Navbar
-        title="Dashboard"
-        userRole={user?.role || "User"}
+        userName={userName}
+        userRole={userRole}
         onMenuToggle={() => setSidebarOpen(true)}
         onLogout={handleLogout}
       />

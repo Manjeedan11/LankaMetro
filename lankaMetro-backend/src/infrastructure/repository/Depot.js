@@ -74,6 +74,14 @@ export async function countActive() {
   return parseInt(result.rows[0].count);
 }
 
+export async function findByName(depotName) {
+  const result = await pool.query(
+    "SELECT depot_id FROM depot WHERE depot_name = $1",
+    [depotName]
+  );
+  return result.rows[0] || null;
+}
+
 export default {
   findAll,
   findById,
@@ -81,4 +89,5 @@ export default {
   update,
   disable,
   countActive,
+  findByName,
 };

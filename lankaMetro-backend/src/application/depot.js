@@ -40,6 +40,14 @@ export const createDepot = async (req, res, next) => {
       );
     }
 
+    // Check for duplicate depot name
+    const existingDepot = await depotRepository.findByName(depot_name);
+    if (existingDepot) {
+      throw new ValidationError(
+        `Depot with name "${depot_name}" already exists.`
+      );
+    }
+
     const newId = await depotRepository.create({
       depot_name,
       location,

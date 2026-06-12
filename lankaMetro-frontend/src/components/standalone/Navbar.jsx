@@ -2,8 +2,9 @@ import { User, Menu, LogOut } from "lucide-react";
 import { useState } from "react";
 import logo from "@/assets/lankaMetroLogo.png";
 
-export default function Navbar({ title, userRole, onMenuToggle, onLogout }) {
+export default function Navbar({ userName, userRole, onMenuToggle, onLogout }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const avatarLetter = userName ? userName.charAt(0).toUpperCase() : "U";
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-white border-b border-gray-100 shadow-sm z-40">
@@ -15,7 +16,7 @@ export default function Navbar({ title, userRole, onMenuToggle, onLogout }) {
           >
             <Menu size={20} />
           </button>
-          <img src={logo} alt="SRMSS Logo" className="h-40 w-30 " />
+          <img src={logo} alt="SRMSS Logo" className="h-40 w-30" />
         </div>
 
         <div className="flex items-center gap-4">
@@ -25,11 +26,11 @@ export default function Navbar({ title, userRole, onMenuToggle, onLogout }) {
               className="flex items-center gap-2 pl-4 border-l border-gray-200 hover:bg-gray-50 pr-2 py-2 rounded-md"
             >
               <div className="text-right">
-                <p className="text-sm font-medium text-gray-900">Admin User</p>
+                <p className="text-sm font-medium text-gray-900">{userName}</p>
                 <p className="text-xs text-gray-600">{userRole}</p>
               </div>
               <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white font-bold text-sm">
-                A
+                {avatarLetter}
               </div>
             </button>
 
