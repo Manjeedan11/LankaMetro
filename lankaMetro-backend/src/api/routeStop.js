@@ -9,7 +9,7 @@ import {
 } from "../application/routeStop.js";
 
 export const routeStopRouter = express.Router();
-routeStopRouter.use(authenticate, allowRoles("logistics_officer"));
+routeStopRouter.use(authenticate, allowRoles("logistics_officer", "driver"));
 
 routeStopRouter.get("/:routeId/stops", getRouteStops);
 routeStopRouter.post("/:routeId/stops", addStopToRoute);

@@ -82,7 +82,7 @@ export const createSchedule = async (req, res, next) => {
     if (new Date(driver.license_expiry) <= new Date())
       throw new ValidationError("Driver license expired");
 
-    // 4. Check overlaps
+    // 4. Check overlaps with existing forward schedules
     const driverOverlap = await scheduleRepository.checkDriverOverlap(
       driver_id,
       schedule_date,
@@ -100,6 +100,31 @@ export const createSchedule = async (req, res, next) => {
     );
     if (vehicleOverlap)
       throw new ValidationError("Vehicle already has a schedule at this time");
+
+    // ✅ NEW: Check overlaps with existing RETURN trips for the same driver/vehicle
+    const driverReturnOverlap =
+      await returnTripRepository.checkDriverReturnTripOverlap(
+        driver_id,
+        schedule_date,
+        departure_time,
+        arrival_time
+      );
+    if (driverReturnOverlap)
+      throw new ValidationError(
+        "Driver already has a return trip during this time"
+      );
+
+    const vehicleReturnOverlap =
+      await returnTripRepository.checkVehicleReturnTripOverlap(
+        vehicle_id,
+        schedule_date,
+        departure_time,
+        arrival_time
+      );
+    if (vehicleReturnOverlap)
+      throw new ValidationError(
+        "Vehicle already has a return trip during this time"
+      );
 
     // Checking for exact duplicate schedule
     const duplicate = await scheduleRepository.checkExactDuplicate(
@@ -171,7 +196,7 @@ export const createSchedule = async (req, res, next) => {
           .padStart(2, "0")}:${returnArrMin.toString().padStart(2, "0")}:00`;
       }
 
-      // Validate return trip overlaps
+      // Validate return trip overlaps (forward + return trips)
       const returnDriverOverlap = await scheduleRepository.checkDriverOverlap(
         driver_id,
         schedule_date,
@@ -192,6 +217,31 @@ export const createSchedule = async (req, res, next) => {
       if (returnVehicleOverlap)
         throw new ValidationError(
           "Return trip would overlap with vehicle's existing schedule"
+        );
+
+      // ✅ Also check if this return trip would overlap with other return trips
+      const returnTripAgainstReturnDriver =
+        await returnTripRepository.checkDriverReturnTripOverlap(
+          driver_id,
+          schedule_date,
+          return_departure_time_calc,
+          return_arrival_time_calc
+        );
+      if (returnTripAgainstReturnDriver)
+        throw new ValidationError(
+          "Return trip would overlap with driver's existing return trip"
+        );
+
+      const returnTripAgainstReturnVehicle =
+        await returnTripRepository.checkVehicleReturnTripOverlap(
+          vehicle_id,
+          schedule_date,
+          return_departure_time_calc,
+          return_arrival_time_calc
+        );
+      if (returnTripAgainstReturnVehicle)
+        throw new ValidationError(
+          "Return trip would overlap with vehicle's existing return trip"
         );
 
       returnTripId = await returnTripRepository.create({

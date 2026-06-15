@@ -73,9 +73,63 @@ export async function findByDriverAndDate(driverId, date) {
   return result.rows;
 }
 
+// ✅ NEW: Check if driver already has a return trip overlapping with given time slot
+export async function checkDriverReturnTripOverlap(
+  driverId,
+  date,
+  startTime,
+  endTime,
+  excludeReturnTripId = null
+) {
+  let query = `
+    SELECT rt.return_trip_id
+    FROM return_trip rt
+    JOIN schedule s ON rt.original_schedule_id = s.schedule_id
+    WHERE s.driver_id = $1
+      AND s.schedule_date = $2
+      AND rt.departure_time < $4
+      AND rt.arrival_time > $3
+  `;
+  const params = [driverId, date, startTime, endTime];
+  if (excludeReturnTripId) {
+    query += ` AND rt.return_trip_id != $5`;
+    params.push(excludeReturnTripId);
+  }
+  const result = await pool.query(query, params);
+  return result.rowCount > 0;
+}
+
+// ✅ NEW: Check if vehicle already has a return trip overlapping with given time slot
+export async function checkVehicleReturnTripOverlap(
+  vehicleId,
+  date,
+  startTime,
+  endTime,
+  excludeReturnTripId = null
+) {
+  let query = `
+    SELECT rt.return_trip_id
+    FROM return_trip rt
+    JOIN schedule s ON rt.original_schedule_id = s.schedule_id
+    WHERE s.vehicle_id = $1
+      AND s.schedule_date = $2
+      AND rt.departure_time < $4
+      AND rt.arrival_time > $3
+  `;
+  const params = [vehicleId, date, startTime, endTime];
+  if (excludeReturnTripId) {
+    query += ` AND rt.return_trip_id != $5`;
+    params.push(excludeReturnTripId);
+  }
+  const result = await pool.query(query, params);
+  return result.rowCount > 0;
+}
+
 export default {
   create,
   findByOriginalScheduleId,
   update,
   findByDriverAndDate,
+  checkDriverReturnTripOverlap,
+  checkVehicleReturnTripOverlap,
 };

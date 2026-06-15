@@ -110,7 +110,7 @@ export async function cancel(id, depotId) {
   return result.rowCount > 0;
 }
 
-// Replace checkDriverOverlap with:
+// ✅ checkDriverOverlap – includes return trips, safe alias
 export async function checkDriverOverlap(
   driverId,
   date,
@@ -118,23 +118,36 @@ export async function checkDriverOverlap(
   endTime,
   excludeScheduleId = null
 ) {
-  let query = `
-      SELECT schedule_id FROM schedule
-      WHERE driver_id = $1
-        AND schedule_date = $2
-        AND departure_time < $4
-        AND arrival_time > $3
+  let forwardQuery = `
+    SELECT schedule_id FROM schedule
+    WHERE driver_id = $1
+      AND schedule_date = $2
+      AND departure_time < $4
+      AND arrival_time > $3
   `;
   const params = [driverId, date, startTime, endTime];
   if (excludeScheduleId) {
-    query += ` AND schedule_id != $5`;
+    forwardQuery += ` AND schedule_id != $5`;
     params.push(excludeScheduleId);
   }
-  const result = await pool.query(query, params);
+
+  const returnQuery = `
+    SELECT rt.return_trip_id FROM return_trip rt
+    JOIN schedule s ON rt.original_schedule_id = s.schedule_id
+    WHERE s.driver_id = $1
+      AND s.schedule_date = $2
+      AND rt.departure_time < $4
+      AND rt.arrival_time > $3
+  `;
+
+  const fullQuery = `
+    SELECT * FROM (${forwardQuery} UNION ${returnQuery}) AS overlap_check
+  `;
+  const result = await pool.query(fullQuery, params);
   return result.rowCount > 0;
 }
 
-// Similarly for checkVehicleOverlap:
+// ✅ checkVehicleOverlap – includes return trips, safe alias
 export async function checkVehicleOverlap(
   vehicleId,
   date,
@@ -142,19 +155,32 @@ export async function checkVehicleOverlap(
   endTime,
   excludeScheduleId = null
 ) {
-  let query = `
-      SELECT schedule_id FROM schedule
-      WHERE vehicle_id = $1
-        AND schedule_date = $2
-        AND departure_time < $4
-        AND arrival_time > $3
+  let forwardQuery = `
+    SELECT schedule_id FROM schedule
+    WHERE vehicle_id = $1
+      AND schedule_date = $2
+      AND departure_time < $4
+      AND arrival_time > $3
   `;
   const params = [vehicleId, date, startTime, endTime];
   if (excludeScheduleId) {
-    query += ` AND schedule_id != $5`;
+    forwardQuery += ` AND schedule_id != $5`;
     params.push(excludeScheduleId);
   }
-  const result = await pool.query(query, params);
+
+  const returnQuery = `
+    SELECT rt.return_trip_id FROM return_trip rt
+    JOIN schedule s ON rt.original_schedule_id = s.schedule_id
+    WHERE s.vehicle_id = $1
+      AND s.schedule_date = $2
+      AND rt.departure_time < $4
+      AND rt.arrival_time > $3
+  `;
+
+  const fullQuery = `
+    SELECT * FROM (${forwardQuery} UNION ${returnQuery}) AS overlap_check
+  `;
+  const result = await pool.query(fullQuery, params);
   return result.rowCount > 0;
 }
 

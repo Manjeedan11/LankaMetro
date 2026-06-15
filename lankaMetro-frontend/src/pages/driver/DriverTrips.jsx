@@ -1,4 +1,5 @@
-import { Play, CheckCircle, AlertCircle } from "lucide-react";
+import { useState } from "react";
+import { Play, CheckCircle, AlertCircle, X } from "lucide-react";
 import StatusBadge from "@/components/standalone/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import {
   useGetNotificationsQuery,
 } from "@/lib/api";
 import { toast } from "sonner";
+import RouteMapPreview from "@/components/standalone/RouteMapPreview";
 
 export default function DriverTrips() {
   const {
@@ -17,6 +19,9 @@ export default function DriverTrips() {
   } = useGetMySchedulesQuery();
   const [updateScheduleStatus] = useUpdateScheduleStatusMutation();
   const { data: notifications = [] } = useGetNotificationsQuery();
+
+  // State for route preview modal
+  const [previewRouteId, setPreviewRouteId] = useState(null);
 
   const handleStartTrip = async (scheduleId) => {
     try {
@@ -142,7 +147,12 @@ export default function DriverTrips() {
                     Completed
                   </Button>
                 )}
-                <Button variant="outline" className={buttonBase}>
+                {/* ✅ View Route button – opens modal preview */}
+                <Button
+                  variant="outline"
+                  className={buttonBase}
+                  onClick={() => setPreviewRouteId(trip.route_id)}
+                >
                   View Route
                 </Button>
               </div>
@@ -150,7 +160,6 @@ export default function DriverTrips() {
           </Card>
         ))}
 
-        {/* Notifications Card */}
         <Card className="border border-blue-200 shadow-sm border-l-4 border-l-blue-500">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -176,6 +185,29 @@ export default function DriverTrips() {
           </CardContent>
         </Card>
       </div>
+
+      {previewRouteId && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+          onClick={() => setPreviewRouteId(null)}
+        >
+          <div
+            className="bg-white rounded-lg p-4 max-w-3xl w-full m-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-lg font-semibold">Route Map Preview</h3>
+              <button
+                onClick={() => setPreviewRouteId(null)}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            <RouteMapPreview routeId={previewRouteId} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
