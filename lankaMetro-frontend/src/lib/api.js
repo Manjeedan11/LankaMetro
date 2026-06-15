@@ -283,6 +283,14 @@ export const Api = createApi({
       query: () => `schedules/history`,
       providesTags: ["Schedule"],
     }),
+    updateReturnTripStatus: builder.mutation({
+      query: ({ id, status }) => ({
+        url: `return-trips/${id}/status`,
+        method: "PATCH",
+        body: { status },
+      }),
+      invalidatesTags: ["Schedule"],
+    }),
 
     // ========== DRIVERS ==========
     getDrivers: builder.query({
@@ -492,6 +500,7 @@ export const {
   useUpdateScheduleStatusMutation,
   useGetMySchedulesQuery,
   useGetMyHistoryQuery,
+  useUpdateReturnTripStatusMutation,
 
   useGetDriversQuery,
   useGetDriverByIdQuery,

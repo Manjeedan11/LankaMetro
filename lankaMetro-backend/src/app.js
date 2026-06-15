@@ -15,6 +15,7 @@ import { driverRouter } from "./api/driver.js";
 import { scheduleRouter } from "./api/schedule.js";
 import { notificationRouter } from "./api/notification.js";
 import { reportRouter } from "./api/reportRouter.js";
+import { returnTripRouter } from "./api/returnTrip.js";
 import cors from "cors";
 import { systemLogRouter } from "./api/systemLog.js";
 import { systemSettingsRouter } from "./api/systemSettings.js";
@@ -36,6 +37,7 @@ app.use("/api/notifications", notificationRouter);
 app.use("/api/reports", reportRouter);
 app.use("/api/system-logs", systemLogRouter);
 app.use("/api/system-settings", systemSettingsRouter);
+app.use("/api/return-trips", returnTripRouter);
 app.use("/api/auth", authRouter);
 
 app.use(globalErrorHandlingMiddleware);

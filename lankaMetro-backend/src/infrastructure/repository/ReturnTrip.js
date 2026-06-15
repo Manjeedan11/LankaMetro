@@ -125,6 +125,42 @@ export async function checkVehicleReturnTripOverlap(
   return result.rowCount > 0;
 }
 
+export async function findById(id) {
+  const result = await pool.query(
+    `SELECT * FROM return_trip WHERE return_trip_id = $1`,
+    [id]
+  );
+  return result.rows[0] || null;
+}
+
+export async function updateStatus(id, status) {
+  const result = await pool.query(
+    `UPDATE return_trip SET status = $1 WHERE return_trip_id = $2`,
+    [status, id]
+  );
+  return result.rowCount > 0;
+}
+
+export async function countRemainingToday(
+  driverId,
+  date,
+  excludeReturnTripId = null
+) {
+  let query = `
+    SELECT COUNT(*) FROM return_trip rt
+    JOIN schedule s ON rt.original_schedule_id = s.schedule_id
+    WHERE s.driver_id = $1 AND s.schedule_date = $2
+      AND rt.status IN ('SCHEDULED', 'IN_PROGRESS')
+  `;
+  const params = [driverId, date];
+  if (excludeReturnTripId) {
+    query += ` AND rt.return_trip_id != $3`;
+    params.push(excludeReturnTripId);
+  }
+  const result = await pool.query(query, params);
+  return parseInt(result.rows[0].count);
+}
+
 export default {
   create,
   findByOriginalScheduleId,
@@ -132,4 +168,7 @@ export default {
   findByDriverAndDate,
   checkDriverReturnTripOverlap,
   checkVehicleReturnTripOverlap,
+  findById,
+  updateStatus,
+  countRemainingToday,
 };

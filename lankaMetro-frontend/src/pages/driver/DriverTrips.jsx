@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   useGetMySchedulesQuery,
   useUpdateScheduleStatusMutation,
+  useUpdateReturnTripStatusMutation,
   useGetNotificationsQuery,
 } from "@/lib/api";
 import { toast } from "sonner";
@@ -18,17 +19,18 @@ export default function DriverTrips() {
     refetch: refetchSchedules,
   } = useGetMySchedulesQuery();
   const [updateScheduleStatus] = useUpdateScheduleStatusMutation();
+  const [updateReturnTripStatus] = useUpdateReturnTripStatusMutation();
   const { data: notifications = [] } = useGetNotificationsQuery();
 
-  // State for route preview modal
   const [previewRouteId, setPreviewRouteId] = useState(null);
 
-  const handleStartTrip = async (scheduleId) => {
+  const handleStartTrip = async (trip) => {
+    const mutation =
+      trip.trip_type === "RETURN"
+        ? updateReturnTripStatus
+        : updateScheduleStatus;
     try {
-      await updateScheduleStatus({
-        id: scheduleId,
-        status: "IN_PROGRESS",
-      }).unwrap();
+      await mutation({ id: trip.schedule_id, status: "IN_PROGRESS" }).unwrap();
       toast.success("Trip started. Driver is now ON DUTY.", {
         icon: "🚌",
         style: { background: "#dcfce7", color: "#166534" },
@@ -42,12 +44,13 @@ export default function DriverTrips() {
     }
   };
 
-  const handleCompleteTrip = async (scheduleId) => {
+  const handleCompleteTrip = async (trip) => {
+    const mutation =
+      trip.trip_type === "RETURN"
+        ? updateReturnTripStatus
+        : updateScheduleStatus;
     try {
-      await updateScheduleStatus({
-        id: scheduleId,
-        status: "COMPLETED",
-      }).unwrap();
+      await mutation({ id: trip.schedule_id, status: "COMPLETED" }).unwrap();
       toast.success("Trip completed.", {
         icon: "✅",
         style: { background: "#dcfce7", color: "#166534" },
@@ -74,7 +77,6 @@ export default function DriverTrips() {
       </div>
 
       <div className="space-y-6">
-        {/* Render all trips (forward and return) */}
         {schedules.map((trip, index) => (
           <Card
             key={trip.schedule_id}
@@ -127,7 +129,7 @@ export default function DriverTrips() {
                 {trip.status === "SCHEDULED" && (
                   <Button
                     className={`flex-1 bg-primary ${buttonBase}`}
-                    onClick={() => handleStartTrip(trip.schedule_id)}
+                    onClick={() => handleStartTrip(trip)}
                   >
                     <Play size={16} className="mr-2" />
                     Start Trip
@@ -136,7 +138,7 @@ export default function DriverTrips() {
                 {trip.status === "IN_PROGRESS" && (
                   <Button
                     className={`flex-1 bg-primary ${buttonBase}`}
-                    onClick={() => handleCompleteTrip(trip.schedule_id)}
+                    onClick={() => handleCompleteTrip(trip)}
                   >
                     <CheckCircle size={16} className="mr-2" />
                     Complete Trip
@@ -147,7 +149,6 @@ export default function DriverTrips() {
                     Completed
                   </Button>
                 )}
-                {/* ✅ View Route button – opens modal preview */}
                 <Button
                   variant="outline"
                   className={buttonBase}
