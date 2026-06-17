@@ -8,6 +8,7 @@ import {
   updateDriverAvailability,
   getAvailableDrivers,
   getMyDriverInfo,
+  requestSuddenTripForDriver,
 } from "../application/driver.js";
 
 export const driverRouter = express.Router();
@@ -36,3 +37,10 @@ driverRouter.patch("/:id", updateDriver);
 driverRouter.patch("/:id/availability", updateDriverAvailability);
 
 driverRouter.get("/me", authenticate, allowRoles("driver"), getMyDriverInfo);
+
+driverRouter.patch(
+  "/:id/request-sudden-trip",
+  authenticate,
+  allowRoles("depot_supervisor"),
+  requestSuddenTripForDriver
+);

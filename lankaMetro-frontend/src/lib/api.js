@@ -323,6 +323,13 @@ export const Api = createApi({
         `drivers/available?date=${date}&start=${start}&end=${end}`,
       providesTags: ["Driver"],
     }),
+    requestSuddenTripForDriver: builder.mutation({
+      query: (id) => ({
+        url: `drivers/${id}/request-sudden-trip`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["Driver", "Notification"],
+    }),
 
     // ========== MAINTENANCE ==========
     getMaintenanceRecords: builder.query({
@@ -507,6 +514,7 @@ export const {
   useUpdateDriverMutation,
   useUpdateDriverAvailabilityMutation,
   useGetAvailableDriversQuery,
+  useRequestSuddenTripForDriverMutation,
 
   useGetMaintenanceRecordsQuery,
   useGetMaintenanceByIdQuery,

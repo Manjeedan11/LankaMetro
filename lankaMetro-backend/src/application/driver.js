@@ -1,5 +1,6 @@
 import driverRepository from "../infrastructure/repository/Driver.js";
 import userRepository from "../infrastructure/repository/User.js";
+import notificationRepository from "../infrastructure/repository/Notification.js";
 import ValidationError from "../domain/errors/validation-error.js";
 import NotFoundError from "../domain/errors/not-found-error.js";
 
@@ -145,5 +146,40 @@ export const getAvailableDrivers = async (req, res, next) => {
     res.status(200).json(drivers);
   } catch (error) {
     next(error);
+  }
+};
+
+export const requestSuddenTripForDriver = async (req, res, next) => {
+  try {
+    const id = parseInt(req.params.id);
+    const depotId = req.user.depotId;
+
+    const driver = await driverRepository.findById(id, depotId);
+    if (!driver) throw new NotFoundError("Driver not found");
+
+    if (driver.availability !== "AVAILABLE") {
+      throw new ValidationError(
+        "Only available drivers can be requested for sudden trips"
+      );
+    }
+
+    const logisticsUsers = await userRepository.findByRoleAndDepot(
+      "logistics_officer",
+      depotId
+    );
+    for (const user of logisticsUsers) {
+      await notificationRepository.create({
+        user_id: user.user_id,
+        message: `🚨 Sudden trip request for driver ${driver.full_name} (ID: ${driver.driver_id}). Please assign a schedule.`,
+        type: "SUDDEN_TRIP",
+        driver_id: null,
+      });
+    }
+
+    res.status(200).json({
+      message: "Sudden trip request sent. Logistics officer notified.",
+    });
+  } catch (err) {
+    next(err);
   }
 };
