@@ -65,7 +65,7 @@ export const createSchedule = async (req, res, next) => {
     if (route.availability !== "ACTIVE")
       throw new ValidationError("Route is not active");
 
-    // 2. Validate vehicle – allow ACTIVE or PENDING (from sudden trip)
+    // 2. Validate vehicle – allow ACTIVE or PENDING
     const vehicle = await vehicleRepository.findById(vehicle_id);
     if (!vehicle) throw new ValidationError("Vehicle not found");
     if (vehicle.status !== "ACTIVE" && vehicle.status !== "PENDING") {
@@ -82,7 +82,7 @@ export const createSchedule = async (req, res, next) => {
     if (new Date(driver.license_expiry) <= new Date())
       throw new ValidationError("Driver license expired");
 
-    // 4. Check overlaps with existing forward schedules
+    // 4. Check overlaps (driver, vehicle)
     const driverOverlap = await scheduleRepository.checkDriverOverlap(
       driver_id,
       schedule_date,
@@ -101,7 +101,20 @@ export const createSchedule = async (req, res, next) => {
     if (vehicleOverlap)
       throw new ValidationError("Vehicle already has a schedule at this time");
 
-    // ✅ NEW: Check overlaps with existing RETURN trips for the same driver/vehicle
+    // ✅ NEW: Check route-level overlap (forward trip)
+    const routeOverlap = await scheduleRepository.checkRouteOverlap(
+      route_id,
+      schedule_date,
+      departure_time,
+      arrival_time
+    );
+    if (routeOverlap) {
+      throw new ValidationError(
+        "Another trip is already scheduled on this route at the same time."
+      );
+    }
+
+    // Check driver/vehicle overlap with existing return trips
     const driverReturnOverlap =
       await returnTripRepository.checkDriverReturnTripOverlap(
         driver_id,
@@ -126,7 +139,7 @@ export const createSchedule = async (req, res, next) => {
         "Vehicle already has a return trip during this time"
       );
 
-    // Checking for exact duplicate schedule
+    // Exact duplicate check
     const duplicate = await scheduleRepository.checkExactDuplicate(
       route_id,
       schedule_date,
@@ -151,7 +164,7 @@ export const createSchedule = async (req, res, next) => {
       depot_id: depotId,
     });
 
-    // 6. If vehicle was PENDING (from sudden trip), set it back to ACTIVE
+    // 6. If vehicle was PENDING, set it back to ACTIVE
     if (vehicle.status === "PENDING") {
       await vehicleRepository.update(vehicle_id, { status: "ACTIVE" });
     }
@@ -196,7 +209,7 @@ export const createSchedule = async (req, res, next) => {
           .padStart(2, "0")}:${returnArrMin.toString().padStart(2, "0")}:00`;
       }
 
-      // Validate return trip overlaps (forward + return trips)
+      // Validate return trip overlaps (driver, vehicle, route)
       const returnDriverOverlap = await scheduleRepository.checkDriverOverlap(
         driver_id,
         schedule_date,
@@ -219,7 +232,20 @@ export const createSchedule = async (req, res, next) => {
           "Return trip would overlap with vehicle's existing schedule"
         );
 
-      // ✅ Also check if this return trip would overlap with other return trips
+      // ✅ NEW: Route-level overlap for the return trip
+      const returnRouteOverlap = await scheduleRepository.checkRouteOverlap(
+        route_id,
+        schedule_date,
+        return_departure_time_calc,
+        return_arrival_time_calc
+      );
+      if (returnRouteOverlap) {
+        throw new ValidationError(
+          "Return trip would conflict with another trip on the same route."
+        );
+      }
+
+      // Also check against other return trips (driver/vehicle)
       const returnTripAgainstReturnDriver =
         await returnTripRepository.checkDriverReturnTripOverlap(
           driver_id,

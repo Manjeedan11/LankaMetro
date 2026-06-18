@@ -68,43 +68,66 @@ export default function MaintenanceHistory() {
         </p>
       </div>
 
-      <Card className="border border-gray-200 shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-            <Filter size={20} />
+      {/* Filter Card – compact styling */}
+      <Card className="border border-gray-200 shadow-sm bg-white">
+        <CardHeader className="bg-white pb-2">
+          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+            <Filter size={18} />
             Filters
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Vehicle</label>
+        <CardContent className="bg-white">
+          <div className="flex flex-wrap items-end gap-3">
+            {/* Vehicle */}
+            <div className="flex-1 min-w-[180px]">
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Vehicle
+              </label>
               <Select value={filterVehicle} onValueChange={setFilterVehicle}>
-                <SelectTrigger className="w-full text-black">
+                <SelectTrigger className="w-full bg-white text-black h-8 text-sm">
                   <SelectValue placeholder="Select vehicle" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Vehicles</SelectItem>
+                <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
+                  <SelectItem
+                    value="all"
+                    className="text-black hover:bg-gray-100"
+                  >
+                    All Vehicles
+                  </SelectItem>
                   {vehicleOptions.map((vehicle) => (
-                    <SelectItem key={vehicle.id} value={vehicle.id.toString()}>
+                    <SelectItem
+                      key={vehicle.id}
+                      value={vehicle.id.toString()}
+                      className="text-black hover:bg-gray-100"
+                    >
                       {vehicle.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">
+            {/* Service Type */}
+            <div className="flex-1 min-w-[180px]">
+              <label className="block text-xs font-medium text-gray-600 mb-1">
                 Service Type
               </label>
               <Select value={filterService} onValueChange={setFilterService}>
-                <SelectTrigger className="w-full text-black">
+                <SelectTrigger className="w-full bg-white text-black h-8 text-sm">
                   <SelectValue placeholder="Select service type" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Services</SelectItem>
+                <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
+                  <SelectItem
+                    value="all"
+                    className="text-black hover:bg-gray-100"
+                  >
+                    All Services
+                  </SelectItem>
                   {serviceOptions.map((service) => (
-                    <SelectItem key={service} value={service}>
+                    <SelectItem
+                      key={service}
+                      value={service}
+                      className="text-black hover:bg-gray-100"
+                    >
                       {service.replace(/_/g, " ")}
                     </SelectItem>
                   ))}
@@ -115,31 +138,34 @@ export default function MaintenanceHistory() {
         </CardContent>
       </Card>
 
-      <Card className="border border-gray-200 shadow-sm">
-        <CardHeader>
-          <CardTitle>Maintenance Records</CardTitle>
+      {/* Table Card */}
+      <Card className="border border-gray-200 shadow-sm bg-white">
+        <CardHeader className="bg-white">
+          <CardTitle className="text-base font-semibold">
+            Maintenance Records
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+        <CardContent className="bg-white p-0">
+          <div className="overflow-x-auto bg-white">
+            <table className="w-full bg-white">
+              <thead className="bg-white">
+                <tr className="border-b border-gray-200 bg-white">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Record ID
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Vehicle
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Service Type
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Description
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Date
                   </th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">
+                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 bg-white">
                     Status
                   </th>
                 </tr>
@@ -147,7 +173,10 @@ export default function MaintenanceHistory() {
               <tbody>
                 {filteredRecords.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="text-center py-6 text-gray-500">
+                    <td
+                      colSpan="6"
+                      className="text-center py-6 text-gray-500 bg-white"
+                    >
                       No maintenance records found.
                     </td>
                   </tr>
@@ -155,24 +184,24 @@ export default function MaintenanceHistory() {
                   filteredRecords.map((record) => (
                     <tr
                       key={record.maintenance_id}
-                      className="border-b border-gray-100 hover:bg-gray-50"
+                      className="border-b border-gray-100 hover:bg-gray-50 bg-white"
                     >
-                      <td className="py-3 px-4 text-sm font-medium text-black">
+                      <td className="py-3 px-4 text-sm font-medium text-black bg-white">
                         {record.maintenance_id}
                       </td>
-                      <td className="py-3 px-4 text-sm text-black">
+                      <td className="py-3 px-4 text-sm text-black bg-white">
                         {record.plate_number || `Vehicle ${record.vehicle_id}`}
                       </td>
-                      <td className="py-3 px-4 text-sm text-black">
+                      <td className="py-3 px-4 text-sm text-black bg-white">
                         {record.type.replace(/_/g, " ")}
                       </td>
-                      <td className="py-3 px-4 text-sm text-gray-600">
+                      <td className="py-3 px-4 text-sm text-gray-600 bg-white">
                         {record.description || "—"}
                       </td>
-                      <td className="py-3 px-4 text-sm text-black">
+                      <td className="py-3 px-4 text-sm text-black bg-white">
                         {record.service_date}
                       </td>
-                      <td className="py-3 px-4 text-sm">
+                      <td className="py-3 px-4 text-sm bg-white">
                         <StatusBadge status={record.status} />
                       </td>
                     </tr>

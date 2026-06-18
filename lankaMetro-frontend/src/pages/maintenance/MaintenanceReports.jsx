@@ -15,6 +15,8 @@ import {
   useGetVehiclesQuery,
   useExportMaintenanceReportPDFQuery,
 } from "@/lib/api";
+import DatePicker from "@/components/standalone/DatePicker";
+import StatusBadge from "@/components/standalone/StatusBadge";
 
 export default function MaintenanceReports() {
   const [dateFrom, setDateFrom] = useState(() => {
@@ -107,47 +109,57 @@ export default function MaintenanceReports() {
         </p>
       </div>
 
-      <Card className="border border-gray-200 shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-            <Filter size={20} />
+      {/* Filter Card – compact flex layout (matching Reports.jsx) */}
+      <Card className="border border-gray-200 shadow-sm bg-white">
+        <CardHeader className="bg-white pb-2">
+          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+            <Filter size={18} />
             Report Filters
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">
+        <CardContent className="bg-white">
+          <div className="flex flex-wrap items-end gap-3">
+            {/* Date From */}
+            <div className="w-30">
+              <label className="block text-xs font-medium text-gray-600 mb-1">
                 Date From
               </label>
-              <Input
-                type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
-                className="text-black"
+              <DatePicker
+                date={dateFrom}
+                onDateChange={(dateStr) => setDateFrom(dateStr)}
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Date To</label>
-              <Input
-                type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
-                className="text-black"
+            {/* Date To */}
+            <div className="w-30">
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Date To
+              </label>
+              <DatePicker
+                date={dateTo}
+                onDateChange={(dateStr) => setDateTo(dateStr)}
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Vehicle</label>
+            {/* Vehicle */}
+            <div className="flex-1 min-w-[160px]">
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Vehicle
+              </label>
               <Select value={vehicleFilter} onValueChange={setVehicleFilter}>
-                <SelectTrigger className="w-full text-black">
+                <SelectTrigger className="w-full bg-white text-black h-8 text-sm">
                   <SelectValue placeholder="Select vehicle" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Vehicles</SelectItem>
+                <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
+                  <SelectItem
+                    value="all"
+                    className="text-black hover:bg-gray-100"
+                  >
+                    All Vehicles
+                  </SelectItem>
                   {vehicles.map((v) => (
                     <SelectItem
                       key={v.vehicle_id}
                       value={v.vehicle_id.toString()}
+                      className="text-black hover:bg-gray-100"
                     >
                       {v.plate_number} (ID: {v.vehicle_id})
                     </SelectItem>
@@ -155,38 +167,67 @@ export default function MaintenanceReports() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Status</label>
+            {/* Status */}
+            <div className="w-40">
+              <label className="block text-xs font-medium text-gray-600 mb-1">
+                Status
+              </label>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full text-black">
+                <SelectTrigger className="w-full bg-white text-black h-8 text-sm">
                   <SelectValue placeholder="Select status" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="SCHEDULED">SCHEDULED</SelectItem>
-                  <SelectItem value="IN_PROGRESS">IN_PROGRESS</SelectItem>
-                  <SelectItem value="COMPLETED">COMPLETED</SelectItem>
+                <SelectContent className="z-50 bg-white border border-gray-200 rounded-md shadow-lg">
+                  <SelectItem
+                    value="all"
+                    className="text-black hover:bg-gray-100"
+                  >
+                    All Statuses
+                  </SelectItem>
+                  <SelectItem
+                    value="SCHEDULED"
+                    className="text-black hover:bg-gray-100"
+                  >
+                    SCHEDULED
+                  </SelectItem>
+                  <SelectItem
+                    value="IN_PROGRESS"
+                    className="text-black hover:bg-gray-100"
+                  >
+                    IN_PROGRESS
+                  </SelectItem>
+                  <SelectItem
+                    value="COMPLETED"
+                    className="text-black hover:bg-gray-100"
+                  >
+                    COMPLETED
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              className={buttonBase}
-              onClick={handleExportPDF}
-              disabled={pdfLoading}
-            >
-              <Download size={16} className="mr-2" />
-              {pdfLoading ? "Generating..." : "Export PDF"}
-            </Button>
-            <Button
-              variant="outline"
-              className={buttonBase}
-              onClick={() => refetch()}
-            >
-              Refresh
-            </Button>
+            {/* Export Button */}
+            <div>
+              <Button
+                variant="outline"
+                size="sm"
+                className={`h-8 text-sm ${buttonBase} rounded-md`}
+                onClick={handleExportPDF}
+                disabled={pdfLoading}
+              >
+                <Download size={14} className="mr-2" />
+                {pdfLoading ? "Generating..." : "Export PDF"}
+              </Button>
+            </div>
+            {/* Refresh Button */}
+            <div>
+              <Button
+                variant="outline"
+                size="sm"
+                className={`h-8 text-sm ${buttonBase} rounded-md`}
+                onClick={() => refetch()}
+              >
+                Refresh
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

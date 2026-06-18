@@ -110,7 +110,7 @@ export async function cancel(id, depotId) {
   return result.rowCount > 0;
 }
 
-// ✅ checkDriverOverlap – includes return trips, safe alias
+// Driver overlap (includes return trips)
 export async function checkDriverOverlap(
   driverId,
   date,
@@ -147,7 +147,7 @@ export async function checkDriverOverlap(
   return result.rowCount > 0;
 }
 
-// ✅ checkVehicleOverlap – includes return trips, safe alias
+// Vehicle overlap (includes return trips)
 export async function checkVehicleOverlap(
   vehicleId,
   date,
@@ -179,6 +179,46 @@ export async function checkVehicleOverlap(
 
   const fullQuery = `
     SELECT * FROM (${forwardQuery} UNION ${returnQuery}) AS overlap_check
+  `;
+  const result = await pool.query(fullQuery, params);
+  return result.rowCount > 0;
+}
+
+// ✅ NEW: Route-level overlap (forward + return trips)
+export async function checkRouteOverlap(
+  routeId,
+  date,
+  startTime,
+  endTime,
+  excludeScheduleId = null
+) {
+  let forwardQuery = `
+    SELECT schedule_id FROM schedule
+    WHERE route_id = $1
+      AND schedule_date = $2
+      AND departure_time < $4
+      AND arrival_time > $3
+  `;
+  const params = [routeId, date, startTime, endTime];
+  if (excludeScheduleId) {
+    forwardQuery += ` AND schedule_id != $5`;
+    params.push(excludeScheduleId);
+  }
+
+  const returnQuery = `
+    SELECT rt.return_trip_id FROM return_trip rt
+    WHERE rt.return_route_id = $1
+      AND rt.departure_time < $4
+      AND rt.arrival_time > $3
+      AND EXISTS (
+        SELECT 1 FROM schedule s
+        WHERE s.schedule_id = rt.original_schedule_id
+          AND s.schedule_date = $2
+      )
+  `;
+
+  const fullQuery = `
+    SELECT * FROM (${forwardQuery} UNION ${returnQuery}) AS route_time_slot
   `;
   const result = await pool.query(fullQuery, params);
   return result.rowCount > 0;
@@ -241,6 +281,7 @@ export default {
   cancel,
   checkDriverOverlap,
   checkVehicleOverlap,
+  checkRouteOverlap,
   countRemainingToday,
   checkExactDuplicate,
   findByDriverAndDate,

@@ -73,7 +73,6 @@ export async function findByDriverAndDate(driverId, date) {
   return result.rows;
 }
 
-// ✅ NEW: Check if driver already has a return trip overlapping with given time slot
 export async function checkDriverReturnTripOverlap(
   driverId,
   date,
@@ -99,7 +98,6 @@ export async function checkDriverReturnTripOverlap(
   return result.rowCount > 0;
 }
 
-// ✅ NEW: Check if vehicle already has a return trip overlapping with given time slot
 export async function checkVehicleReturnTripOverlap(
   vehicleId,
   date,
