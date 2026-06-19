@@ -1,5 +1,12 @@
-import { Wrench, CheckCircle, Clock, BusFront } from "lucide-react";
+import {
+  Wrench,
+  CheckCircle,
+  Clock,
+  BusFront,
+  AlertCircle,
+} from "lucide-react";
 import { useState } from "react";
+import { Toaster, toast } from "sonner";
 import StatCard from "@/components/standalone/StatCard";
 import StatusBadge from "@/components/standalone/StatusBadge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,6 +28,21 @@ import {
   useCreateMaintenanceMutation,
   useUpdateMaintenanceMutation,
 } from "@/lib/api";
+
+// Helper to extract YYYY-MM-DD from any date string (fixes timezone offset issues)
+const extractDate = (dateValue) => {
+  if (!dateValue) return "";
+  try {
+    if (typeof dateValue === "string" && dateValue.includes("T")) {
+      const date = new Date(dateValue);
+      return date.toLocaleDateString("en-CA");
+    }
+    const match = String(dateValue).match(/^(\d{4}-\d{2}-\d{2})/);
+    return match ? match[1] : "";
+  } catch {
+    return "";
+  }
+};
 
 export default function MaintenanceDashboard() {
   const { data: vehicles = [] } = useGetVehiclesQuery();
@@ -64,10 +86,37 @@ export default function MaintenanceDashboard() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Frontend quick check (optional) – backend will also enforce
+  const isDuplicateMaintenance = (vehicleId, serviceDate) => {
+    return maintenanceRecords.some(
+      (rec) =>
+        rec.vehicle_id === parseInt(vehicleId) &&
+        rec.service_date === serviceDate &&
+        rec.status !== "COMPLETED"
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Quick frontend validation to avoid unnecessary API call
+    if (isDuplicateMaintenance(formData.vehicle_id, formData.service_date)) {
+      toast.error(
+        "A maintenance record already exists for this vehicle on this date (and is not completed).",
+        {
+          icon: <AlertCircle className="h-4 w-4" />,
+          style: { background: "#fee2e2", color: "#b91c1c" },
+        }
+      );
+      return;
+    }
+
     try {
       await createMaintenance(formData).unwrap();
+      toast.success("Maintenance record created successfully.", {
+        icon: <CheckCircle className="h-4 w-4" />,
+        style: { background: "#dcfce7", color: "#166534" },
+      });
       refetch();
       setFormData({
         vehicle_id: "",
@@ -78,7 +127,10 @@ export default function MaintenanceDashboard() {
       });
     } catch (err) {
       console.error("Failed to create maintenance:", err);
-      alert("Error creating maintenance record");
+      toast.error(err?.data?.message || "Error creating maintenance record", {
+        icon: <AlertCircle className="h-4 w-4" />,
+        style: { background: "#fee2e2", color: "#b91c1c" },
+      });
     }
   };
 
@@ -94,9 +146,23 @@ export default function MaintenanceDashboard() {
         id: pendingAction.id,
         status: pendingAction.newStatus,
       }).unwrap();
+      toast.success(
+        `Maintenance ${pendingAction.actionLabel.toLowerCase()}ed successfully.`,
+        {
+          icon: <CheckCircle className="h-4 w-4" />,
+          style: { background: "#dcfce7", color: "#166534" },
+        }
+      );
       refetch();
     } catch (err) {
-      alert(`Failed to ${pendingAction.actionLabel.toLowerCase()} maintenance`);
+      toast.error(
+        err?.data?.message ||
+          `Failed to ${pendingAction.actionLabel.toLowerCase()} maintenance`,
+        {
+          icon: <AlertCircle className="h-4 w-4" />,
+          style: { background: "#fee2e2", color: "#b91c1c" },
+        }
+      );
     } finally {
       setConfirmDialogOpen(false);
       setPendingAction(null);
@@ -108,12 +174,14 @@ export default function MaintenanceDashboard() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl space-y-8">
+      <Toaster position="bottom-right" richColors={false} />
+
       <div className="page-header">
         <h1 className="page-title">Maintenance Dashboard</h1>
         <p className="page-description">Track vehicle maintenance schedules</p>
       </div>
 
-      {/* Stats Cards – remain in a grid */}
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="In Maintenance"
@@ -141,7 +209,7 @@ export default function MaintenanceDashboard() {
         />
       </div>
 
-      {/* Add Maintenance Record Form – Vertical layout */}
+      {/* Add Maintenance Record Form */}
       <Card className="border border-gray-200 shadow-sm">
         <CardHeader>
           <CardTitle>Add Maintenance Record</CardTitle>
@@ -244,7 +312,7 @@ export default function MaintenanceDashboard() {
         </CardContent>
       </Card>
 
-      {/* Recent Maintenance Table – remains full width */}
+      {/* Recent Maintenance Table */}
       <Card className="border border-gray-200 shadow-sm">
         <CardHeader>
           <CardTitle>Recent Maintenance</CardTitle>
@@ -284,7 +352,7 @@ export default function MaintenanceDashboard() {
                       {item.type?.replace(/_/g, " ")}
                     </td>
                     <td className="py-3 px-4 text-sm text-black">
-                      {item.service_date}
+                      {extractDate(item.service_date)}
                     </td>
                     <td className="py-3 px-4 text-sm">
                       <StatusBadge status={item.status} />

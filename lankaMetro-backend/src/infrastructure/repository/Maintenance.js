@@ -38,6 +38,27 @@ export async function findById(id) {
   return result.rows[0] || null;
 }
 
+// ✅ NEW: Find non‑completed records for a vehicle on a specific date
+export async function findByVehicleAndDate(
+  vehicleId,
+  serviceDate,
+  excludeId = null
+) {
+  let query = `
+    SELECT maintenance_id FROM maintenance
+    WHERE vehicle_id = $1
+      AND service_date = $2
+      AND status != 'COMPLETED'
+  `;
+  const params = [vehicleId, serviceDate];
+  if (excludeId) {
+    query += ` AND maintenance_id != $3`;
+    params.push(excludeId);
+  }
+  const result = await pool.query(query, params);
+  return result.rows;
+}
+
 export async function create(maintenanceData) {
   const {
     vehicle_id,
@@ -86,6 +107,7 @@ export async function deleteById(id) {
 export default {
   findAll,
   findById,
+  findByVehicleAndDate,
   create,
   update,
   deleteById,

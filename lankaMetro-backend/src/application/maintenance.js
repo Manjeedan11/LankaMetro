@@ -33,15 +33,33 @@ export const createMaintenance = async (req, res, next) => {
       description,
       status = "SCHEDULED",
     } = req.body;
+
     if (!vehicle_id || !type || !service_date) {
       throw new ValidationError(
         "vehicle_id, type, and service_date are required"
       );
     }
 
-    // Verify vehicle exists
+    // 1. Verify vehicle exists
     const vehicle = await vehicleRepository.findById(vehicle_id);
     if (!vehicle) throw new ValidationError("Vehicle not found");
+
+    // ✅ 2. Check for duplicate/overlapping non‑completed record
+    const existing = await maintenanceRepository.findByVehicleAndDate(
+      vehicle_id,
+      service_date
+    );
+    if (existing.length > 0) {
+      throw new ValidationError(
+        `A maintenance record already exists for this vehicle on ${service_date} (status: ${existing[0].status})`
+      );
+    }
+
+    // 3. (Optional) Prevent past dates
+    const today = new Date().toISOString().split("T")[0];
+    if (service_date < today) {
+      throw new ValidationError("Service date cannot be in the past");
+    }
 
     const newId = await maintenanceRepository.create({
       vehicle_id,
@@ -72,7 +90,25 @@ export const updateMaintenance = async (req, res, next) => {
     const existing = await maintenanceRepository.findById(id);
     if (!existing) throw new NotFoundError("Maintenance record not found");
 
-    // If status is changing to/from 'IN_PROGRESS', update vehicle status accordingly
+    // ✅ Check for duplicate/overlap if service_date or vehicle_id is being changed
+    const newVehicleId = updates.vehicle_id ?? existing.vehicle_id;
+    const newServiceDate = updates.service_date ?? existing.service_date;
+
+    // Only check if the record is not already COMPLETED (or if it's changing to COMPLETED, we allow)
+    if (updates.service_date || updates.vehicle_id) {
+      const conflicting = await maintenanceRepository.findByVehicleAndDate(
+        newVehicleId,
+        newServiceDate,
+        id // exclude the current record from the check
+      );
+      if (conflicting.length > 0) {
+        throw new ValidationError(
+          `Another maintenance record already exists for this vehicle on ${newServiceDate} (status: ${conflicting[0].status})`
+        );
+      }
+    }
+
+    // Handle status transition (existing logic)
     const newStatus = updates.status;
     const oldStatus = existing.status;
 
@@ -81,8 +117,7 @@ export const updateMaintenance = async (req, res, next) => {
     } else if (newStatus === "COMPLETED" && oldStatus === "IN_PROGRESS") {
       await vehicleRepository.updateStatus(existing.vehicle_id, "ACTIVE");
     } else if (newStatus === "SCHEDULED" && oldStatus === "IN_PROGRESS") {
-      // Reverting from IN_PROGRESS to SCHEDULED – should vehicle become active? Usually not, but we decide:
-      // We'll keep vehicle as MAINTENANCE until COMPLETED. So no change.
+      // No vehicle status change
     }
 
     const success = await maintenanceRepository.update(id, updates);
@@ -100,8 +135,6 @@ export const deleteMaintenance = async (req, res, next) => {
     const existing = await maintenanceRepository.findById(id);
     if (!existing) throw new NotFoundError("Maintenance record not found");
 
-    // If this record was IN_PROGRESS, revert vehicle to ACTIVE? Risky.
-    // We'll only allow deletion of SCHEDULED or COMPLETED records.
     if (existing.status === "IN_PROGRESS") {
       throw new ValidationError(
         "Cannot delete a maintenance record that is IN_PROGRESS. Complete it first."
@@ -115,7 +148,6 @@ export const deleteMaintenance = async (req, res, next) => {
   }
 };
 
-// For the "Complete Maintenance" button – a dedicated endpoint
 export const completeMaintenance = async (req, res, next) => {
   try {
     const id = parseInt(req.params.id);
@@ -126,9 +158,7 @@ export const completeMaintenance = async (req, res, next) => {
         "Only maintenance records IN_PROGRESS can be completed"
       );
     }
-    // Update maintenance status to COMPLETED
     await maintenanceRepository.update(id, { status: "COMPLETED" });
-    // Reactivate vehicle
     await vehicleRepository.updateStatus(existing.vehicle_id, "ACTIVE");
     res
       .status(200)
