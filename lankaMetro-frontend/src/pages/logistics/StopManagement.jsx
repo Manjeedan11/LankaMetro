@@ -1,5 +1,6 @@
-import { Plus, Edit2, Trash2, MapPin } from "lucide-react";
+import { Plus, Edit2, Trash2, AlertCircle, CheckCircle } from "lucide-react";
 import { useState } from "react";
+import { Toaster, toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -40,13 +41,40 @@ export default function StopManagement() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Quick frontend duplicate check (optional)
+  const isDuplicateName = (name, excludeId = null) => {
+    return stops.some(
+      (stop) =>
+        stop.stop_name.toLowerCase() === name.toLowerCase() &&
+        stop.stop_id !== excludeId
+    );
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Frontend validation for duplicate name
+    if (isDuplicateName(formData.stop_name, editingId)) {
+      toast.error(`A stop with name "${formData.stop_name}" already exists.`, {
+        icon: <AlertCircle className="h-4 w-4" />,
+        style: { background: "#fee2e2", color: "#b91c1c" },
+      });
+      return;
+    }
+
     try {
       if (editingId) {
         await updateStop({ id: editingId, ...formData }).unwrap();
+        toast.success("Stop updated successfully.", {
+          icon: <CheckCircle className="h-4 w-4" />,
+          style: { background: "#dcfce7", color: "#166534" },
+        });
       } else {
         await createStop(formData).unwrap();
+        toast.success("Stop created successfully.", {
+          icon: <CheckCircle className="h-4 w-4" />,
+          style: { background: "#dcfce7", color: "#166534" },
+        });
       }
       refetch();
       setShowForm(false);
@@ -59,7 +87,10 @@ export default function StopManagement() {
       });
     } catch (err) {
       console.error("Failed to save stop:", err);
-      alert("Error saving stop");
+      toast.error(err?.data?.message || "Error saving stop", {
+        icon: <AlertCircle className="h-4 w-4" />,
+        style: { background: "#fee2e2", color: "#b91c1c" },
+      });
     }
   };
 
@@ -83,8 +114,15 @@ export default function StopManagement() {
     try {
       await deleteStop(deleteTargetId).unwrap();
       refetch();
+      toast.success("Stop deleted successfully.", {
+        icon: <CheckCircle className="h-4 w-4" />,
+        style: { background: "#dcfce7", color: "#166534" },
+      });
     } catch (err) {
-      alert("Delete failed");
+      toast.error(err?.data?.message || "Delete failed", {
+        icon: <AlertCircle className="h-4 w-4" />,
+        style: { background: "#fee2e2", color: "#b91c1c" },
+      });
     } finally {
       setDeleteDialogOpen(false);
       setDeleteTargetId(null);
@@ -99,6 +137,7 @@ export default function StopManagement() {
 
   return (
     <div className="container mx-auto px-4 py-6 max-w-7xl space-y-4">
+      <Toaster position="bottom-right" richColors={false} />
       <div>
         <h1 className="page-title">Stop Management</h1>
         <p className="page-description">

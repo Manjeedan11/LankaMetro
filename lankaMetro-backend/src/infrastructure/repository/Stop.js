@@ -16,6 +16,14 @@ export async function findById(id, depotId) {
   return result.rows[0] || null;
 }
 
+export async function findByNameAndDepot(stopName, depotId) {
+  const result = await pool.query(
+    "SELECT stop_id FROM stop WHERE stop_name = $1 AND depot_id = $2",
+    [stopName, depotId]
+  );
+  return result.rows[0] || null;
+}
+
 export async function create(stopData) {
   const { stop_name, location, latitude, longitude, depot_id } = stopData;
   const result = await pool.query(
@@ -58,6 +66,7 @@ export async function deleteById(id, depotId) {
 export default {
   findAll,
   findById,
+  findByNameAndDepot,
   create,
   update,
   deleteById,

@@ -28,7 +28,19 @@ export const createStop = async (req, res, next) => {
   try {
     const { stop_name, location, latitude, longitude } = req.body;
     const depotId = req.user.depotId;
+
     if (!stop_name) throw new ValidationError("stop_name is required");
+
+    const existing = await stopRepository.findByNameAndDepot(
+      stop_name,
+      depotId
+    );
+    if (existing) {
+      throw new ValidationError(
+        `A stop with name "${stop_name}" already exists in this depot.`
+      );
+    }
+
     const newId = await stopRepository.create({
       stop_name,
       location,
@@ -52,8 +64,22 @@ export const updateStop = async (req, res, next) => {
       updates.latitude = parseFloat(updates.latitude);
     if (updates.longitude !== undefined)
       updates.longitude = parseFloat(updates.longitude);
+
     const existing = await stopRepository.findById(id, depotId);
     if (!existing) throw new NotFoundError("Stop not found");
+
+    if (updates.stop_name && updates.stop_name !== existing.stop_name) {
+      const duplicate = await stopRepository.findByNameAndDepot(
+        updates.stop_name,
+        depotId
+      );
+      if (duplicate) {
+        throw new ValidationError(
+          `A stop with name "${updates.stop_name}" already exists in this depot.`
+        );
+      }
+    }
+
     const success = await stopRepository.update(id, depotId, updates);
     if (!success) throw new NotFoundError("Stop not found or no changes");
     res.status(200).json({ message: "Stop updated" });
