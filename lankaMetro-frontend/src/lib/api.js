@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 export const Api = createApi({
   reducerPath: "Api",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:8500/api/",
+    baseUrl: "https://lankametro-backend.onrender.com/api/",
     prepareHeaders: (headers, { getState }) => {
       const token = localStorage.getItem("token");
       if (token) {

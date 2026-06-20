@@ -22,7 +22,7 @@ import { systemSettingsRouter } from "./api/systemSettings.js";
 
 const app = express();
 app.use(express.json());
-app.use(cors({ origin: "http://localhost:5173" }));
+app.use(cors({ origin: "https://lanka-metro.vercel.app" }));
 
 app.use("/api/users", authenticate, userRouter);
 app.use("/api/depots", depotRouter);
